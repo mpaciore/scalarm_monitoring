@@ -2,11 +2,28 @@ package parsers
 
 import (
 	//"fmt"
+	"bytes"
 	"os/exec"
 	"strings"
 	"errors"
 	"manager/utils"
 )
+
+func SplitOutput(c exec.Cmd) ([]byte, []byte, error) {
+	if c.Stdout != nil {
+ 		return nil, nil, errors.New("exec: Stdout already set")
+	}
+	if c.Stderr != nil {
+		return nil, nil, errors.New("exec: Stderr already set")
+ 	}
+	var o bytes.Buffer
+	var e bytes.Buffer
+	c.Stdout = &o
+ 	c.Stderr = &e
+ 	err := c.Run()
+ 	return o.Bytes(), e.Bytes(), err
+ }
+ 
 
 /*
     # States from man qstat:
@@ -37,6 +54,8 @@ const STATES_MAPPING = map[string]string {
 	
 func Qstat(sm *Sm_record) (string, error) {
 	output, err := exec.Command("qstat", sm.Res_id).Output()// CombinedOutput
+	//stdout, stderr, err := SplitOutput(exec.Command("qstat", sm.Res_id))
+	
 	utils.Check(err)
 	
 	string_output := string(output[:])

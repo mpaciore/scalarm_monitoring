@@ -22,22 +22,32 @@ var login string //TODO zmienic na cos sensowniejszego
 var password string 
 
 func getSimulationManagerRecords(infrastructure string) *[]parsers.Sm_record{
-	Log.printf("getSimulationManagerRecords")
-	resp, err := http.Get(exp_man_address + "/simulation_managers?infrastructure=" + infrastructure)
+	log.Printf("getSimulationManagerRecords")
+		
+	url := "http://" + exp_man_address + "/simulation_managers?infrastructure=" + infrastructure
+	request, err := http.NewRequest("GET", url, nil)	
+	utils.Check(err)
+	request.SetBasicAuth(login, password)
+	client := http.Client{}
+	resp, err := client.Do(request)
+
+	//resp, err := http.Get("http://" + exp_man_address + "/simulation_managers?infrastructure=" + infrastructure)
+	
 	utils.Check(err)
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	utils.Check(err)
-	
+
 	res, err := parsers.Get_simulation_managers_json_encode(body)
 	utils.Check(err)
-	
-	Log.printf("Sm_records: \n" + res)
+	for _, val := range(*res) {
+		val.Print()
+	}
 	return res
 }
 
 func getSimulationManagerCode(sm *parsers.Sm_record) {
-	Log.printf("getSimulationManagerCode")
+	log.Printf("getSimulationManagerCode")
 	resp, err := http.Get(exp_man_address + "/simulation_managers/" + sm.Id + "/code")
 	utils.Check(err)
 	defer resp.Body.Close()
@@ -48,16 +58,17 @@ func getSimulationManagerCode(sm *parsers.Sm_record) {
 	utils.Check(err)
 }
 
-func notifyStateChange(sm *parsers.Sm_record) {
-	Log.printf("notifyStateChange")
-	resp, err := http.PostForm(exp_man_address + "/simulation_managers/" + sm.Id, url.Values{"state": {sm.State}})
+func notifyStateChange(sm *parsers.Sm_record) {//do zmiany
+	log.Printf("notifyStateChange")
+	resp, err := http.PostForm(exp_man_address + "/simulation_managers/" + sm.Id, 
+								url.Values{"state": {sm.State}, "cmd_to_execute": {""}})
 	utils.Check(err)
 	defer resp.Body.Close()
 }
 
 func getExperimentManagerLocation() {
-	Log.printf("getExperimentManagerLocation")
-	resp, err := http.Get(information_service_address + "/experiment_managers")
+	log.Printf("getExperimentManagerLocation")
+	resp, err := http.Get("http://" + information_service_address + "/experiment_managers")
 	utils.Check(err)
 	defer resp.Body.Close()
 	
@@ -67,12 +78,12 @@ func getExperimentManagerLocation() {
 	res, err := parsers.Get_is_data_encode(body)
 	utils.Check(err)
 	
-	exp_man_address = res.Exp_man_address //zakladamy na razie ze jest jeden
-	Log.printf("exp_man_address: " + exp_man_address)
+	exp_man_address = res.Exp_man_address[0] //dodac lososwanie
+	log.Printf("\texp_man_address: " + exp_man_address)
 }
 
 func readConfiguration() {
-	Log.printf("readConfiguration")
+	log.Printf("readConfiguration")
 	data, err := ioutil.ReadFile("config.txt")
 	utils.Check(err)
 	
@@ -80,17 +91,17 @@ func readConfiguration() {
 	utils.Check(err)
 	
 	information_service_address = res.Information_service_address
-	Log.printf("information_service_address: " + information_service_address)
+	log.Printf("\tinformation_service_address: " + information_service_address)
 	login = res.Login
-	Log.printf("login: " + login)
+	log.Printf("\tlogin: " + login)
 	password = res.Password
-	Log.printf("password: " + password)
+	log.Printf("\tpassword: " + password)
 	infrastructures = res.Infrastructures
-	Log.printf("infrastructures: " + infrastructures)
+	log.Printf("\tinfrastructures: %v", infrastructures)
 }
 
 func _init() {
-	Log.printf("_init")
+	log.Printf("_init")
 	//sm_records = make([]parsers.Sm_record, 0, 0)
 	infrastructures = make([]string, 0, 0)
 }
@@ -98,18 +109,18 @@ func _init() {
 
 func main() {
 	_init()
-	Log.printf("Init: OK")
+	log.Printf("Init: OK")
 	readConfiguration()
-	Log.printf("Read Configuration: OK")
+	log.Printf("Read Configuration: OK")
 	getExperimentManagerLocation()
-	Log.printf("Get Experiment Manager Location: OK")
+	log.Printf("Get Experiment Manager Location: OK")
 
 	//----------
 	var old_state string
 	var nonerror_sm_count int
 		
 	for {
-		Log.printf("Starting loop")
+		log.Printf("Starting loop")
 		nonerror_sm_count = 0
 		for i:=0; i<len(infrastructures); i++ {
 			sm_records = getSimulationManagerRecords(infrastructures[i]) 
@@ -124,7 +135,7 @@ func main() {
 						if false/*jakaś forma errora*/ {
 							//store_error("not_started") ??
 							//ERROR
-						} else if sm.Command == "stop" {
+						} else if sm.Cmd_to_execute == "stop" {
 							//stop and TERMINATING
 						} else {
 							getSimulationManagerCode(&sm)
@@ -139,9 +150,9 @@ func main() {
 						if false/*jakaś forma errora*/ {
 							//store_error("not_started") ??
 							//ERROR
-						} else if sm.Command == "stop" {
+						} else if sm.Cmd_to_execute == "stop" {
 							//stop and TERMINATING
-						} else if sm.Command == "restart" {
+						} else if sm.Cmd_to_execute == "restart" {
 							//restart and INITIALIZING
 						} else {
 							resource_status, err := parsers.Qstat(&sm)
@@ -157,9 +168,9 @@ func main() {
 						if false/*jakaś forma errora*/ {
 							//store_error("terminated", get_log) ??
 							//ERROR
-						} else if sm.Command == "stop" {
+						} else if sm.Cmd_to_execute == "stop" {
 							//stop and TERMINATING
-						} else if sm.Command == "restart" {
+						} else if sm.Cmd_to_execute == "restart" {
 							//restart and INITIALIZING
 							//simulation_manager_command(restart) ??
 						}
@@ -170,7 +181,7 @@ func main() {
 						if resource_status == "released" {
 							//simulation_manager_command(destroy_record) ??
 							//end
-						} else if sm.Command == "stop" {
+						} else if sm.Cmd_to_execute == "stop" {
 							//stop and TERMINATING
 						}
 					}	
@@ -192,4 +203,5 @@ func main() {
 		}
 		break
 	}
+	log.Printf("End")
 }

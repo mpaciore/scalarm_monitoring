@@ -2,7 +2,7 @@ package parsers
 
 import (
 	"encoding/json"
-	//"fmt"
+	"fmt"
 	"time"
 	"errors"
 	"manager/utils"
@@ -10,20 +10,37 @@ import (
 
 type Sm_record struct {
 	Id string  `json:"_id"`		//id scalarmowe
-	Res_id string				//id zadania w systemie kolejkowym *
+	Res_id string				//id zadania w systemie kolejkowym *to updatujemy*
 	User_id string				//user id
 	Experiment_id string		//id eksperymentu (zewnętrzne)
 	Sm_uuid string				//id do autentykacji (z nazwy pliku .sh)
 	Time_limit float64			//w minutach (?)
 	Sm_initialized_at time.Time	//kiedy wrzucone do systemu kolejkowego (ustawiamy)
-	Created_at time.Time		//kiedy sm_record został utworzony (w bazie)
-	Sm_initialized bool			//plgrid: trafiło do kolejki, cloud: czy em już wysłał sm czy nie
-	Name string					//na ogół = Res_id, dla GUI
-	State string				//aktualny stan sm *
-	Command string 				//akcja do wykonania, TODO odpowiednia nazwa *
+	Created_at time.Time		//kiedy sm_record zostal utworzony (w bazie)
+	Sm_initialized bool			//plgrid: trafilo do kolejki, cloud: czy em już wyslal sm czy nie
+	Name string					//na ogol = Res_id, dla GUI
+	State string				//aktualny stan sm *to updatujemy*
+	Cmd_to_execute string 		//akcja do wykonania *to wykonujemy i czyscimy*
 	//opcjonalne Error string
 }
-	
+
+func (sm Sm_record) Print() {
+	fmt.Println(
+		"\n\t_id               \t " + sm.Id +
+		"\n\tres_id            \t " + sm.Res_id + 
+		"\n\tuser_id           \t " + sm.User_id +
+		"\n\texperiment_id     \t " + sm.Experiment_id +
+		"\n\tsm_uuid           \t " + sm.Sm_uuid +
+		"\n\tTime_limit        \t", sm.Time_limit, 	
+		"\n\tSm_initialized_at \t", sm.Sm_initialized_at, 
+		"\n\tCreated_at        \t", sm.Created_at,
+		"\n\tSm_initialized    \t", sm.Sm_initialized, 
+		"\n\tName              \t " + sm.Name +
+		"\n\tState             \t " + sm.State +
+		"\n\tCmd_to_execute    \t " + sm.Cmd_to_execute + 
+		"\n-----------------")
+}
+
 type Exp_man_data struct {
 	Status string
 	Sm_records []Sm_record
