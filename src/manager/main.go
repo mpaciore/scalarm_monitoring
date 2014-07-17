@@ -4,6 +4,7 @@ import (
 	"manager/parsers"
 	"manager/grids"
 	"manager/utils"
+	"manager/env"
 	"net/http"
 	"io/ioutil"
 	//"os"
@@ -24,14 +25,14 @@ var password string
 func getSimulationManagerRecords(infrastructure string) *[]parsers.Sm_record{
 	log.Printf("getSimulationManagerRecords")
 		
-	url := "http://" + exp_man_address + "/simulation_managers?infrastructure=" + infrastructure
+	url := env.Protocol + exp_man_address + "/simulation_managers?infrastructure=" + infrastructure
 	request, err := http.NewRequest("GET", url, nil)	
 	utils.Check(err)
 	request.SetBasicAuth(login, password)
 	client := http.Client{}
 	resp, err := client.Do(request)
 
-	//resp, err := http.Get("http://" + exp_man_address + "/simulation_managers?infrastructure=" + infrastructure)
+	//resp, err := http.Get(env.Protocol + exp_man_address + "/simulation_managers?infrastructure=" + infrastructure)
 	
 	utils.Check(err)
 	defer resp.Body.Close()
@@ -48,7 +49,7 @@ func getSimulationManagerRecords(infrastructure string) *[]parsers.Sm_record{
 
 func getSimulationManagerCode(sm *parsers.Sm_record) {
 	log.Printf("getSimulationManagerCode")
-	resp, err := http.Get(exp_man_address + "/simulation_managers/" + sm.Id + "/code")
+	resp, err := http.Get(env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id + "/code")
 	utils.Check(err)
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
@@ -60,7 +61,7 @@ func getSimulationManagerCode(sm *parsers.Sm_record) {
 
 func notifyStateChange(sm *parsers.Sm_record) {//do zmiany
 	log.Printf("notifyStateChange")
-	resp, err := http.PostForm(exp_man_address + "/simulation_managers/" + sm.Id, 
+	resp, err := http.PostForm(env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id, 
 								url.Values{"state": {sm.State}, "cmd_to_execute": {""}})
 	utils.Check(err)
 	defer resp.Body.Close()
@@ -68,7 +69,7 @@ func notifyStateChange(sm *parsers.Sm_record) {//do zmiany
 
 func getExperimentManagerLocation() {
 	log.Printf("getExperimentManagerLocation")
-	resp, err := http.Get("http://" + information_service_address + "/experiment_managers")
+	resp, err := http.Get(env.Protocol + information_service_address + "/experiment_managers")
 	utils.Check(err)
 	defer resp.Body.Close()
 	
