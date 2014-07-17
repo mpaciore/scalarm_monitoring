@@ -2,15 +2,16 @@ package main
 
 import (
 	"manager/parsers"
-	"manager/grids"
+	//"manager/grids"
 	"manager/utils"
 	"manager/env"
 	"net/http"
 	"io/ioutil"
 	//"os"
 	"net/url"
-	//"strings"
+	"strings"
 	"log"
+	"strconv"
 )
 
 var exp_man_address string
@@ -41,30 +42,50 @@ func getSimulationManagerRecords(infrastructure string) *[]parsers.Sm_record{
 
 	res, err := parsers.Get_simulation_managers_json_encode(body)
 	utils.Check(err)
-	for _, val := range(*res) {
-		val.Print()
-	}
 	return res
 }
 
-func getSimulationManagerCode(sm *parsers.Sm_record) {
+func getSimulationManagerCode(sm *parsers.Sm_record, infrastructure string) {//infrastruktura tu malo potrzebna
 	log.Printf("getSimulationManagerCode")
-	resp, err := http.Get(env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id + "/code")
+	defer log.Printf("getSimulationManagerCode: OK")
+
+	url := env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id + "/code" + "?infrastructure=" + infrastructure
+	request, err := http.NewRequest("GET", url, nil)	
+	utils.Check(err)
+	request.SetBasicAuth(login, password)
+	client := http.Client{}
+	resp, err := client.Do(request)
+
+	//resp, err := http.Get(env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id + "/code")
+	
 	utils.Check(err)
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	utils.Check(err)
 	
-	err = ioutil.WriteFile("sources_" + sm.Id , body, 0600)
+	err = ioutil.WriteFile("sources_" + sm.Id + ".zip", body, 0600)
 	utils.Check(err)
+
 }
 
-func notifyStateChange(sm *parsers.Sm_record) {//do zmiany
+func notifyStateChange(sm *parsers.Sm_record, infrastructure string) {//do zmiany
 	log.Printf("notifyStateChange")
-	resp, err := http.PostForm(env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id, 
-								url.Values{"state": {sm.State}, "cmd_to_execute": {""}})
+	
+	data := url.Values{/*"parameters": {"\"state\":\"ugabuga\""},*/ "infrastructure": {infrastructure}}
+	_url := env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id //+ "?infrastructure=" + infrastructure
+	request, err := http.NewRequest("PUT", _url, strings.NewReader(data.Encode()))	
+	utils.Check(err)
+	request.SetBasicAuth(login, password)
+	
+	client := http.Client{}
+	resp, err := client.Do(request)
+
+	//resp, err := http.PostForm(env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id, 
+	//							url.Values{"state": {sm.State}, "cmd_to_execute": {""}})
+	
 	utils.Check(err)
 	defer resp.Body.Close()
+	log.Printf("Status code: " + strconv.Itoa(resp.StatusCode))
 }
 
 func getExperimentManagerLocation() {
@@ -117,92 +138,109 @@ func main() {
 	log.Printf("Get Experiment Manager Location: OK")
 
 	//----------
-	var old_state string
+	//var old_state string
 	var nonerror_sm_count int
-		
+	z := 0	
+
 	for {
 		log.Printf("Starting loop")
 		nonerror_sm_count = 0
-		for i:=0; i<len(infrastructures); i++ {
-			sm_records = getSimulationManagerRecords(infrastructures[i]) 
+		for _, infrastructure := range(infrastructures) {
+			log.Printf("Starting " + infrastructure + " loop")
+			sm_records = getSimulationManagerRecords(infrastructure) 
 			nonerror_sm_count += len(*sm_records)
 			
 			for _, sm := range(*sm_records) {
-				old_state = sm.State
 				
-				//-----------
-				switch sm.State {
-					case "CREATED": {
-						if false/*jakaś forma errora*/ {
-							//store_error("not_started") ??
-							//ERROR
-						} else if sm.Cmd_to_execute == "stop" {
-							//stop and TERMINATING
-						} else {
-							getSimulationManagerCode(&sm)
-							//unpack sources
-							grids.Qsub(&sm)
-							//save job id
-							//check if available
-							sm.State = "INITIALIZING"	
-						}
-					}
-					case "INITIALIZING": {
-						if false/*jakaś forma errora*/ {
-							//store_error("not_started") ??
-							//ERROR
-						} else if sm.Cmd_to_execute == "stop" {
-							//stop and TERMINATING
-						} else if sm.Cmd_to_execute == "restart" {
-							//restart and INITIALIZING
-						} else {
-							resource_status, err := parsers.Qstat(&sm)
-							utils.Check(err)
-							if resource_status == "ready" {
-								//install and RUNNING
-							} else if resource_status == "running_sm" {
-								//RUNNING
-							}
-						}
-					}	
-					case "RUNNING": {
-						if false/*jakaś forma errora*/ {
-							//store_error("terminated", get_log) ??
-							//ERROR
-						} else if sm.Cmd_to_execute == "stop" {
-							//stop and TERMINATING
-						} else if sm.Cmd_to_execute == "restart" {
-							//restart and INITIALIZING
-							//simulation_manager_command(restart) ??
-						}
-					}	
-					case "TERMINATING": {
-						resource_status, err := parsers.Qstat(&sm)
-						utils.Check(err)
-						if resource_status == "released" {
-							//simulation_manager_command(destroy_record) ??
-							//end
-						} else if sm.Cmd_to_execute == "stop" {
-							//stop and TERMINATING
-						}
-					}	
-					case "ERROR": {
-						nonerror_sm_count--
-						//simulation_manager_command(destroy_record) ??
-					}
+				sm.Print()
+				//sm.State = "ugabuga"
+
+				//getSimulationManagerCode(&sm, infrastructure)
+
+				if z==0 {
+					notifyStateChange(&sm, infrastructure)
 				}
-				//------------
+
+				// old_state = sm.State
 				
-				if old_state != sm.State {//res_id
-					notifyStateChange(&sm)
-				}
+				// //-----------
+				// switch sm.State {
+				// 	case "CREATED": {
+				// 		if false/*jakaś forma errora*/ {
+				// 			//store_error("not_started") ??
+				// 			//ERROR
+				// 		} else if sm.Cmd_to_execute == "stop" {
+				// 			//stop and TERMINATING
+				// 		} else {
+				// 			getSimulationManagerCode(&sm)
+				// 			//unpack sources
+				// 			grids.Qsub(&sm)
+				// 			//save job id
+				// 			//check if available
+				// 			sm.State = "INITIALIZING"	
+				// 		}
+				// 	}
+				// 	case "INITIALIZING": {
+				// 		if false/*jakaś forma errora*/ {
+				// 			//store_error("not_started") ??
+				// 			//ERROR
+				// 		} else if sm.Cmd_to_execute == "stop" {
+				// 			//stop and TERMINATING
+				// 		} else if sm.Cmd_to_execute == "restart" {
+				// 			//restart and INITIALIZING
+				// 		} else {
+				// 			resource_status, err := parsers.Qstat(&sm)
+				// 			utils.Check(err)
+				// 			if resource_status == "ready" {
+				// 				//install and RUNNING
+				// 			} else if resource_status == "running_sm" {
+				// 				//RUNNING
+				// 			}
+				// 		}
+				// 	}	
+				// 	case "RUNNING": {
+				// 		if false/*jakaś forma errora*/ {
+				// 			//store_error("terminated", get_log) ??
+				// 			//ERROR
+				// 		} else if sm.Cmd_to_execute == "stop" {
+				// 			//stop and TERMINATING
+				// 		} else if sm.Cmd_to_execute == "restart" {
+				// 			//restart and INITIALIZING
+				// 			//simulation_manager_command(restart) ??
+				// 		}
+				// 	}	
+				// 	case "TERMINATING": {
+				// 		resource_status, err := parsers.Qstat(&sm)
+				// 		utils.Check(err)
+				// 		if resource_status == "released" {
+				// 			//simulation_manager_command(destroy_record) ??
+				// 			//end
+				// 		} else if sm.Cmd_to_execute == "stop" {
+				// 			//stop and TERMINATING
+				// 		}
+				// 	}	
+				// 	case "ERROR": {
+				// 		nonerror_sm_count--
+				// 		//simulation_manager_command(destroy_record) ??
+				// 	}
+				// }
+				// //------------
+				
+				// if old_state != sm.State {//res_id
+				// 	notifyStateChange(&sm)
+				// }
+				
 			}		
 		}
 		
-		if nonerror_sm_count == 0 /* nic nie dziala na infrastrkturze*/{
+		if z == 1 {
 			break
 		}
-		break
+		z++
+
+		// if nonerror_sm_count == 0 { //nic nie dziala na infrastrkturze
+		// 	break
+		// }
 	}
 	log.Printf("End")
 }

@@ -4,6 +4,6 @@
 	"password": "a",
 	"infrastructures": 
 	[
-		"dummy"
+		"private_machine"
 	]
 }

@@ -28,14 +28,14 @@ func (sm Sm_record) Print() {
 	fmt.Println(
 		"\n\t_id               \t " + sm.Id +
 		"\n\tres_id            \t " + sm.Res_id + 
-		"\n\tuser_id           \t " + sm.User_id +
-		"\n\texperiment_id     \t " + sm.Experiment_id +
-		"\n\tsm_uuid           \t " + sm.Sm_uuid +
-		"\n\tTime_limit        \t", sm.Time_limit, 	
-		"\n\tSm_initialized_at \t", sm.Sm_initialized_at, 
-		"\n\tCreated_at        \t", sm.Created_at,
-		"\n\tSm_initialized    \t", sm.Sm_initialized, 
-		"\n\tName              \t " + sm.Name +
+		//"\n\tuser_id           \t " + sm.User_id +
+		//"\n\texperiment_id     \t " + sm.Experiment_id +
+		//"\n\tsm_uuid           \t " + sm.Sm_uuid +
+		//"\n\tTime_limit        \t", sm.Time_limit, 	
+		//"\n\tSm_initialized_at \t", sm.Sm_initialized_at, 
+		//"\n\tCreated_at        \t", sm.Created_at,
+		//"\n\tSm_initialized    \t", sm.Sm_initialized, 
+		//"\n\tName              \t " + sm.Name +
 		"\n\tState             \t " + sm.State +
 		"\n\tCmd_to_execute    \t " + sm.Cmd_to_execute + 
 		"\n-----------------")
