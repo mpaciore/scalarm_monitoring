@@ -5,5 +5,5 @@ building guide:
 for development environment:
   go build manager
   
-for development environment:
+for production environment:
   go build -tags prod manager
