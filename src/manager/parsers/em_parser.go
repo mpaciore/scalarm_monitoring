@@ -14,7 +14,7 @@ type Sm_record struct {
 	User_id string				//user id
 	Experiment_id string		//id eksperymentu (zewnętrzne)
 	Sm_uuid string				//id do autentykacji (z nazwy pliku .sh)
-	Time_limit float64			//w minutach (?)
+	Time_limit string//float64	//w minutach (?) 
 	Sm_initialized_at time.Time	//kiedy wrzucone do systemu kolejkowego (ustawiamy)
 	Created_at time.Time		//kiedy sm_record zostal utworzony (w bazie)
 	Sm_initialized bool			//plgrid: trafilo do kolejki, cloud: czy em już wyslal sm czy nie
@@ -22,6 +22,9 @@ type Sm_record struct {
 	State string				//aktualny stan sm *to updatujemy*
 	Cmd_to_execute string 		//akcja do wykonania *to wykonujemy i czyscimy*
 	//opcjonalne Error string
+
+	Credentials_id string		//bylo w zapytaniu
+	Start_at string
 }
 
 func (sm Sm_record) Print() {

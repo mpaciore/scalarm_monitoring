@@ -25,6 +25,7 @@ var password string
 
 func getSimulationManagerRecords(infrastructure string) *[]parsers.Sm_record{
 	log.Printf("getSimulationManagerRecords")
+	defer log.Printf("getSimulationManagerRecords: OK")
 		
 	url := env.Protocol + exp_man_address + "/simulation_managers?infrastructure=" + infrastructure
 	request, err := http.NewRequest("GET", url, nil)	
@@ -70,10 +71,12 @@ func getSimulationManagerCode(sm *parsers.Sm_record, infrastructure string) {//i
 
 func notifyStateChange(sm *parsers.Sm_record, infrastructure string) {//do zmiany
 	log.Printf("notifyStateChange")
-	
-	data := url.Values{/*"parameters": {"\"state\":\"ugabuga\""},*/ "infrastructure": {infrastructure}}
+	defer log.Printf("notifyStateChange: OK") 
+
+	data := url.Values{"parameters": {"{\"res_id\":\"aaaa\"}"}, "infrastructure": {infrastructure}}
 	_url := env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id //+ "?infrastructure=" + infrastructure
 	request, err := http.NewRequest("PUT", _url, strings.NewReader(data.Encode()))	
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	utils.Check(err)
 	request.SetBasicAuth(login, password)
 	
@@ -152,13 +155,11 @@ func main() {
 			
 			for _, sm := range(*sm_records) {
 				
-				sm.Print()
-				//sm.State = "ugabuga"
-
-				//getSimulationManagerCode(&sm, infrastructure)
+				sm.Print() // LOG
 
 				if z==0 {
 					notifyStateChange(&sm, infrastructure)
+					getSimulationManagerCode(&sm, infrastructure)
 				}
 
 				// old_state = sm.State
