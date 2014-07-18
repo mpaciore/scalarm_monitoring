@@ -12,6 +12,7 @@ import (
 	"strings"
 	"log"
 	"strconv"
+	"encoding/json"
 )
 
 var exp_man_address string
@@ -32,12 +33,11 @@ func getSimulationManagerRecords(infrastructure string) *[]parsers.Sm_record{
 	utils.Check(err)
 	request.SetBasicAuth(login, password)
 	client := http.Client{}
-	resp, err := client.Do(request)
 
-	//resp, err := http.Get(env.Protocol + exp_man_address + "/simulation_managers?infrastructure=" + infrastructure)
-	
+	resp, err := client.Do(request)
 	utils.Check(err)
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	utils.Check(err)
 
@@ -55,12 +55,11 @@ func getSimulationManagerCode(sm *parsers.Sm_record, infrastructure string) {//i
 	utils.Check(err)
 	request.SetBasicAuth(login, password)
 	client := http.Client{}
-	resp, err := client.Do(request)
 
-	//resp, err := http.Get(env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id + "/code")
-	
+	resp, err := client.Do(request)
 	utils.Check(err)
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	utils.Check(err)
 	
@@ -71,24 +70,29 @@ func getSimulationManagerCode(sm *parsers.Sm_record, infrastructure string) {//i
 
 func notifyStateChange(sm *parsers.Sm_record, infrastructure string) {//do zmiany
 	log.Printf("notifyStateChange")
-	defer log.Printf("notifyStateChange: OK") 
 
-	data := url.Values{"parameters": {"{\"res_id\":\"aaaa\"}"}, "infrastructure": {infrastructure}}
+	sm_json, err := json.Marshal(sm)
+	utils.Check(err)
+	log.Printf(string(sm_json))
+	data := url.Values{"parameters": {string(sm_json)}, "infrastructure": {infrastructure}}
 	_url := env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id //+ "?infrastructure=" + infrastructure
+	
 	request, err := http.NewRequest("PUT", _url, strings.NewReader(data.Encode()))	
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	utils.Check(err)
-	request.SetBasicAuth(login, password)
-	
+	request.SetBasicAuth(login, password)	
 	client := http.Client{}
-	resp, err := client.Do(request)
 
-	//resp, err := http.PostForm(env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id, 
-	//							url.Values{"state": {sm.State}, "cmd_to_execute": {""}})
-	
+	resp, err := client.Do(request)
 	utils.Check(err)
 	defer resp.Body.Close()
+
 	log.Printf("Status code: " + strconv.Itoa(resp.StatusCode))
+	if resp.StatusCode == 200 {
+		log.Printf("notifyStateChange: OK")
+	} else {
+		log.Printf("notifyStateChange: ERROR")
+	}
 }
 
 func getExperimentManagerLocation() {
@@ -141,7 +145,7 @@ func main() {
 	log.Printf("Get Experiment Manager Location: OK")
 
 	//----------
-	//var old_state string
+	var old_sm parsers.Sm_record
 	var nonerror_sm_count int
 	z := 0	
 
@@ -154,15 +158,15 @@ func main() {
 			nonerror_sm_count += len(*sm_records)
 			
 			for _, sm := range(*sm_records) {
-				
+				old_sm = sm
+
 				sm.Print() // LOG
 
 				if z==0 {
-					notifyStateChange(&sm, infrastructure)
-					getSimulationManagerCode(&sm, infrastructure)
+					//sm.State = "created"
+					sm.Res_id = "nowe" 
+					//sm.Cmd_to_execute = "qqqq"
 				}
-
-				// old_state = sm.State
 				
 				// //-----------
 				// switch sm.State {
@@ -227,9 +231,9 @@ func main() {
 				// }
 				// //------------
 				
-				// if old_state != sm.State {//res_id
-				// 	notifyStateChange(&sm)
-				// }
+				if old_sm != sm {
+					notifyStateChange(&sm, infrastructure)
+				}
 				
 			}		
 		}
@@ -239,9 +243,9 @@ func main() {
 		}
 		z++
 
-		// if nonerror_sm_count == 0 { //nic nie dziala na infrastrkturze
-		// 	break
-		// }
+		if nonerror_sm_count == 0 { //TODO nic nie dziala na infrastrkturze
+		 	break
+		}
 	}
 	log.Printf("End")
 }
