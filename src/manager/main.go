@@ -12,7 +12,8 @@ import (
 	"strings"
 	"log"
 	"strconv"
-	"encoding/json"
+	"bytes"
+	//"encoding/json"
 )
 
 var exp_man_address string
@@ -68,13 +69,55 @@ func getSimulationManagerCode(sm *parsers.Sm_record, infrastructure string) {//i
 
 }
 
-func notifyStateChange(sm *parsers.Sm_record, infrastructure string) {//do zmiany
+func notifyStateChange(sm, old_sm *parsers.Sm_record, infrastructure string) {//do zmiany
 	log.Printf("notifyStateChange")
 
-	sm_json, err := json.Marshal(sm)
-	utils.Check(err)
-	log.Printf(string(sm_json))
-	data := url.Values{"parameters": {string(sm_json)}, "infrastructure": {infrastructure}}
+	//sm_json, err := json.Marshal(sm)
+	//utils.Check(err)
+	//log.Printf(string(sm_json))
+	//data := url.Values{"parameters": {string(sm_json)}, "infrastructure": {infrastructure}}
+	
+	//----
+	var parameters bytes.Buffer
+	parameters.WriteString("{")
+	comma := false
+
+	if sm.State != old_sm.State{
+		parameters.WriteString("\"state\":\"" + sm.State + "\"")
+		comma = true
+	}
+	// if true{
+	// 	if comma {
+	// 		parameters.WriteString(",")
+	// 	}
+	// 	parameters.WriteString("\"_id\":\"" + sm.Id + "\"")
+	// 	comma = true
+	// }
+	if sm.Res_id != old_sm.Res_id{
+		if comma {
+			parameters.WriteString(",")
+		}
+		parameters.WriteString("\"res_id\":\"" + sm.Res_id + "\"")
+		comma = true
+	}
+	if sm.Cmd_to_execute != old_sm.Cmd_to_execute{
+		if comma {
+			parameters.WriteString(",")
+		}
+		parameters.WriteString("\"cmd_to_execute\":\"" + sm.Cmd_to_execute + "\"")
+		comma = true
+	}
+	if sm.Error != old_sm.Error{
+		if comma {
+			parameters.WriteString(",")
+		}
+		parameters.WriteString("\"error\":\"" + sm.Error + "\"")
+		comma = true
+	}
+	parameters.WriteString("}")
+	data := url.Values{"parameters": {parameters.String()}, "infrastructure": {infrastructure}}
+	//-----
+
 	_url := env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id //+ "?infrastructure=" + infrastructure
 	
 	request, err := http.NewRequest("PUT", _url, strings.NewReader(data.Encode()))	
@@ -163,9 +206,9 @@ func main() {
 				sm.Print() // LOG
 
 				if z==0 {
-					//sm.State = "created"
-					sm.Res_id = "nowe" 
-					//sm.Cmd_to_execute = "qqqq"
+					sm.State = "created"
+					sm.Res_id = "WWWWW" 
+					sm.Cmd_to_execute = "qqqq"
 				}
 				
 				// //-----------
@@ -231,8 +274,8 @@ func main() {
 				// }
 				// //------------
 				
-				if old_sm != sm {
-					notifyStateChange(&sm, infrastructure)
+				if old_sm != sm || true{
+					notifyStateChange(&sm, &old_sm, infrastructure)
 				}
 				
 			}		

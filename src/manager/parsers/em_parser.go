@@ -21,7 +21,7 @@ type Sm_record struct {
 	//Name string					//na ogol = Res_id, dla GUI
 	State string				//aktualny stan sm *to updatujemy*
 	Cmd_to_execute string 		//akcja do wykonania *to wykonujemy i czyscimy* 
-	//Error string				//opcjonalne
+	Error string				//opcjonalne
 
 	//Credentials_id string		//bylo w zapytaniu
 	//Start_at string
