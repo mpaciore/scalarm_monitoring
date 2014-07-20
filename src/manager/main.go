@@ -2,7 +2,7 @@ package main
 
 import (
 	"manager/parsers"
-	"manager/grids"
+	"manager/infrastructureInterface"
 	"manager/utils"
 	"manager/env"
 	"net/http"
@@ -105,6 +105,7 @@ func _init() {
 	log.Printf("_init")
 	//sm_records = make([]parsers.Sm_record, 0, 0)
 	infrastructures = make([]string, 0, 0)
+	infrastructureInterface.InitConnectors()
 }
 
 
@@ -141,7 +142,8 @@ func main() {
 						} else {
 							getSimulationManagerCode(&sm)
 							//unpack sources
-							grids.Qsub(&sm)
+							//pass path to file with command:
+							/*resID := */infrastructureInterface.Connectors[infrastructures[i]].PrepareResource("path")
 							//save job id
 							//check if available
 							sm.State = "INITIALIZING"	
@@ -199,7 +201,7 @@ func main() {
 			}		
 		}
 		
-		if nonerror_sm_count == 0 /* nic nie dziala na infrastrkturze*/{
+		if nonerror_sm_count == 0 /*nothing running on infrastructure*/{
 			break
 		}
 		break

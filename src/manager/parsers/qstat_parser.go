@@ -1,7 +1,6 @@
 package parsers
 
 import (
-	//"fmt"
 	"bytes"
 	"os/exec"
 	"strings"
