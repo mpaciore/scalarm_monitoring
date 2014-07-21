@@ -7,4 +7,5 @@ type IConnector interface {
 	Install(string)
 	Stop(string)
 	Restart(string)
+	Status(string) (string, error)
 }

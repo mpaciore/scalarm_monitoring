@@ -158,7 +158,7 @@ func main() {
 						} else if sm.Cmd_to_execute == "restart" {
 							//restart and INITIALIZING
 						} else {
-							resource_status, err := parsers.Qstat(&sm)
+							resource_status, err := infrastructureInterface.Connectors[infrastructures[i]].Status(sm.Res_id)
 							utils.Check(err)
 							if resource_status == "ready" {
 								//install and RUNNING
@@ -179,7 +179,7 @@ func main() {
 						}
 					}	
 					case "TERMINATING": {
-						resource_status, err := parsers.Qstat(&sm)
+						resource_status, err := infrastructureInterface.Connectors[infrastructures[i]].Status(sm.Res_id)
 						utils.Check(err)
 						if resource_status == "released" {
 							//simulation_manager_command(destroy_record) ??
