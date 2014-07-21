@@ -156,7 +156,7 @@ func getExperimentManagerLocation() {
 
 func readConfiguration() {
 	log.Printf("readConfiguration")
-	data, err := ioutil.ReadFile("config.txt")
+	data, err := ioutil.ReadFile("config.json")
 	utils.Check(err)
 	
 	res, err := parsers.Get_config_encode(data)
