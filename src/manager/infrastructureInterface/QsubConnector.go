@@ -44,8 +44,7 @@ func (c QsubConnector) Stop(jobID string) {
 //checks resource state
 //returns resource state in understandable form
 func (c QsubConnector) Status(resID string) (string, error) {
-	output, err := exec.Command("qstat", resID).Output()// CombinedOutput
-	//stdout, stderr, err := SplitOutput(exec.Command("qstat", sm.Res_id))
+	output, err := exec.Command("qstat ", resID).Output()
 	
 	utils.Check(err)
 	
