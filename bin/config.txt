@@ -1,9 +1,0 @@
-{
-	"information_service_address": "localhost:11300",
-	"login": "michal.wrona.4@gmail.com",
-	"password": "a",
-	"infrastructures": 
-	[
-		"dummy"
-	]
-}
