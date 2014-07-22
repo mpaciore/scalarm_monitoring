@@ -20,6 +20,8 @@ type Sm_record struct {
 	Cmd_to_execute string 		//akcja do wykonania *to wykonujemy i czyscimy* 
 	Error string				//opcjonalne
 	Pid string					//private machine
+	Job_id string
+	Vm_id string
 
 	//Credentials_id string		//bylo w zapytaniu
 	//Start_at string
@@ -37,9 +39,12 @@ func (sm Sm_record) Print() {
 		//"\n\tCreated_at        \t", sm.Created_at,
 		//"\n\tSm_initialized    \t", sm.Sm_initialized, 
 		//"\n\tName              \t " + sm.Name +
+		"\n\tPid               \t " + sm.Pid + 
+		"\n\tVm_id             \t " + sm.Vm_id + 
+		"\n\tPid               \t " + sm.Pid + 
+		"\n\tJob_id            \t " + sm.Job_id + 
 		"\n\tState             \t " + sm.State +
 		"\n\tCmd_to_execute    \t " + sm.Cmd_to_execute + 
 		"\n\tError             \t " + sm.Error + 
-		"\n\tPid               \t " + sm.Pid + 
 		"\n-----------------")
 }
