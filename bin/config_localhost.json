@@ -1,0 +1,9 @@
+{
+	"InformationServiceAddress": "localhost:11300",
+	"Login": "michal.wrona.4@gmail.com",
+	"Password": "a",
+	"Infrastructures": 
+	[
+		"private_machine"
+	]
+}
