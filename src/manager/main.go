@@ -1,208 +1,127 @@
 package main
 
 import (
-	"manager/parsers"
-	"manager/grids"
+	"manager/model"
 	"manager/utils"
 	"manager/env"
-	"net/http"
-	"io/ioutil"
-	//"os"
-	"net/url"
-	//"strings"
 	"log"
 )
 
-var exp_man_address string
-var infrastructures []string
-var sm_records *[]parsers.Sm_record
-var information_service_address string
-var old_sm_state map[string]string
-
-var login string //TODO zmienic na cos sensowniejszego
-var password string 
-
-func getSimulationManagerRecords(infrastructure string) *[]parsers.Sm_record{
-	log.Printf("getSimulationManagerRecords")
-		
-	url := env.Protocol + exp_man_address + "/simulation_managers?infrastructure=" + infrastructure
-	request, err := http.NewRequest("GET", url, nil)	
-	utils.Check(err)
-	request.SetBasicAuth(login, password)
-	client := http.Client{}
-	resp, err := client.Do(request)
-
-	//resp, err := http.Get(env.Protocol + exp_man_address + "/simulation_managers?infrastructure=" + infrastructure)
-	
-	utils.Check(err)
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	utils.Check(err)
-
-	res, err := parsers.Get_simulation_managers_json_encode(body)
-	utils.Check(err)
-	for _, val := range(*res) {
-		val.Print()
-	}
-	return res
-}
-
-func getSimulationManagerCode(sm *parsers.Sm_record) {
-	log.Printf("getSimulationManagerCode")
-	resp, err := http.Get(env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id + "/code")
-	utils.Check(err)
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	utils.Check(err)
-	
-	err = ioutil.WriteFile("sources_" + sm.Id , body, 0600)
-	utils.Check(err)
-}
-
-func notifyStateChange(sm *parsers.Sm_record) {//do zmiany
-	log.Printf("notifyStateChange")
-	resp, err := http.PostForm(env.Protocol + exp_man_address + "/simulation_managers/" + sm.Id, 
-								url.Values{"state": {sm.State}, "cmd_to_execute": {""}})
-	utils.Check(err)
-	defer resp.Body.Close()
-}
-
-func getExperimentManagerLocation() {
-	log.Printf("getExperimentManagerLocation")
-	resp, err := http.Get(env.Protocol + information_service_address + "/experiment_managers")
-	utils.Check(err)
-	defer resp.Body.Close()
-	
-	body, err := ioutil.ReadAll(resp.Body)
-	utils.Check(err)
-	
-	res, err := parsers.Get_is_data_encode(body)
-	utils.Check(err)
-	
-	exp_man_address = res.Exp_man_address[0] //dodac lososwanie
-	log.Printf("\texp_man_address: " + exp_man_address)
-}
-
-func readConfiguration() {
-	log.Printf("readConfiguration")
-	data, err := ioutil.ReadFile("config.txt")
-	utils.Check(err)
-	
-	res, err := parsers.Get_config_encode(data)
-	utils.Check(err)
-	
-	information_service_address = res.Information_service_address
-	log.Printf("\tinformation_service_address: " + information_service_address)
-	login = res.Login
-	log.Printf("\tlogin: " + login)
-	password = res.Password
-	log.Printf("\tpassword: " + password)
-	infrastructures = res.Infrastructures
-	log.Printf("\tinfrastructures: %v", infrastructures)
-}
-
-func _init() {
-	log.Printf("_init")
-	//sm_records = make([]parsers.Sm_record, 0, 0)
-	infrastructures = make([]string, 0, 0)
-}
-
-
 func main() {
-	_init()
-	log.Printf("Init: OK")
-	readConfiguration()
-	log.Printf("Read Configuration: OK")
-	getExperimentManagerLocation()
-	log.Printf("Get Experiment Manager Location: OK")
+	log.Printf("Protocol: " + env.Protocol)
+	configData, err := model.ReadConfiguration()
+	utils.Check(err)
 
-	//----------
-	var old_state string
-	var nonerror_sm_count int
-		
+	infrastructures := configData.Infrastructures
+	experimentManagerConnector := model.CreateExperimentManagerConnector(configData.Login, configData.Password)
+	experimentManagerConnector.GetExperimentManagerLocation(configData.InformationServiceAddress)
+
+	var old_sm_record model.Sm_record
+	var nonerrorSmCount int
+
+	// z := 0
+ 
 	for {
 		log.Printf("Starting loop")
-		nonerror_sm_count = 0
-		for i:=0; i<len(infrastructures); i++ {
-			sm_records = getSimulationManagerRecords(infrastructures[i]) 
-			nonerror_sm_count += len(*sm_records)
+		nonerrorSmCount = 0
+		for _, infrastructure := range(infrastructures) {
+			log.Printf("Starting " + infrastructure + " loop")
 			
-			for _, sm := range(*sm_records) {
-				old_state = sm.State
+			sm_records, err := experimentManagerConnector.GetSimulationManagerRecords(infrastructure) 
+			utils.Check(err)
+
+			nonerrorSmCount += len(*sm_records)
+			
+			for _, sm_record := range(*sm_records) {
+				old_sm_record = sm_record
+				// sm_record.Print() // LOG
 				
+				// if z==0 {
+				// 	sm_record.State = "created"
+				// 	sm_record.Res_id = "QQQQQ" 
+				// 	sm_record.Cmd_to_execute = ""
+				// 	experimentManagerConnector.GetSimulationManagerCode(&sm_record, infrastructure)
+				// }
+
+
 				//-----------
-				switch sm.State {
-					case "CREATED": {
-						if false/*jakaś forma errora*/ {
-							//store_error("not_started") ??
-							//ERROR
-						} else if sm.Cmd_to_execute == "stop" {
-							//stop and TERMINATING
-						} else {
-							getSimulationManagerCode(&sm)
-							//unpack sources
-							grids.Qsub(&sm)
-							//save job id
-							//check if available
-							sm.State = "INITIALIZING"	
-						}
-					}
-					case "INITIALIZING": {
-						if false/*jakaś forma errora*/ {
-							//store_error("not_started") ??
-							//ERROR
-						} else if sm.Cmd_to_execute == "stop" {
-							//stop and TERMINATING
-						} else if sm.Cmd_to_execute == "restart" {
-							//restart and INITIALIZING
-						} else {
-							resource_status, err := parsers.Qstat(&sm)
-							utils.Check(err)
-							if resource_status == "ready" {
-								//install and RUNNING
-							} else if resource_status == "running_sm" {
-								//RUNNING
-							}
-						}
-					}	
-					case "RUNNING": {
-						if false/*jakaś forma errora*/ {
-							//store_error("terminated", get_log) ??
-							//ERROR
-						} else if sm.Cmd_to_execute == "stop" {
-							//stop and TERMINATING
-						} else if sm.Cmd_to_execute == "restart" {
-							//restart and INITIALIZING
-							//simulation_manager_command(restart) ??
-						}
-					}	
-					case "TERMINATING": {
-						resource_status, err := parsers.Qstat(&sm)
-						utils.Check(err)
-						if resource_status == "released" {
-							//simulation_manager_command(destroy_record) ??
-							//end
-						} else if sm.Cmd_to_execute == "stop" {
-							//stop and TERMINATING
-						}
-					}	
-					case "ERROR": {
-						nonerror_sm_count--
-						//simulation_manager_command(destroy_record) ??
-					}
-				}
+				// switch sm_record.State {
+				// 	case "CREATED": {
+				// 		if false/*jakaś forma errora*/ {
+				// 			//store_error("not_started") ??
+				// 			//ERROR
+				// 		} else if sm_record.Cmd_to_execute == "stop" {
+				// 			//stop and TERMINATING
+				// 		} else {
+				// 			getSimulationManagerCode(&sm_record)
+				// 			//unpack sources
+				// 			grids.Qsub(&sm_record)
+				// 			//save job id
+				// 			//check if available
+				// 			sm_record.State = "INITIALIZING"	
+				// 		}
+				// 	}
+				// 	case "INITIALIZING": {
+				// 		if false/*jakaś forma errora*/ {
+				// 			//store_error("not_started") ??
+				// 			//ERROR
+				// 		} else if sm_record.Cmd_to_execute == "stop" {
+				// 			//stop and TERMINATING
+				// 		} else if sm_record.Cmd_to_execute == "restart" {
+				// 			//restart and INITIALIZING
+				// 		} else {
+				// 			resource_status, err := model.Qstat(&sm_record)
+				// 			utils.Check(err)
+				// 			if resource_status == "ready" {
+				// 				//install and RUNNING
+				// 			} else if resource_status == "running_sm" {
+				// 				//RUNNING
+				// 			}
+				// 		}
+				// 	}	
+				// 	case "RUNNING": {
+				// 		if false/*jakaś forma errora*/ {
+				// 			//store_error("terminated", get_log) ??
+				// 			//ERROR
+				// 		} else if sm_record.Cmd_to_execute == "stop" {
+				// 			//stop and TERMINATING
+				// 		} else if sm_record.Cmd_to_execute == "restart" {
+				// 			//restart and INITIALIZING
+				// 			//simulation_manager_command(restart) ??
+				// 		}
+				// 	}	
+				// 	case "TERMINATING": {
+				// 		resource_status, err := model.Qstat(&sm_record)
+				// 		utils.Check(err)
+				// 		if resource_status == "released" {
+				// 			//simulation_manager_command(destroy_record) ??
+				// 			//end
+				// 		} else if sm_record.Cmd_to_execute == "stop" {
+				// 			//stop and TERMINATING
+				// 		}
+				// 	}	
+				// 	case "ERROR": {
+				// 		nonerrorSmCount--
+				// 		//simulation_manager_command(destroy_record) ??
+				// 	}
+				// }
 				//------------
 				
-				if old_state != sm.State {//res_id
-					notifyStateChange(&sm)
+				if old_sm_record != sm_record {
+					experimentManagerConnector.NotifyStateChange(&sm_record, &old_sm_record, infrastructure)
 				}
-			}		
+				
+			}
 		}
+
+		// if z == 1 {
+		// 	break
+		// }
+		// z++
 		
-		if nonerror_sm_count == 0 /* nic nie dziala na infrastrkturze*/{
-			break
+		if nonerrorSmCount == 0 { //TODO nic nie dziala na infrastrkturze
+		 	break
 		}
-		break
 	}
 	log.Printf("End")
 }
