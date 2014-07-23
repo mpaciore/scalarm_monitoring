@@ -2,7 +2,7 @@ package main
 
 import (
 	"manager/model"
-	"manager/infrastructureInterface"
+	"manager/infrastructureFacade"
 	"manager/utils"
 	"manager/env"
 	"log"
@@ -19,8 +19,6 @@ func main() {
 	infrastructures := configData.Infrastructures
 	experimentManagerConnector := model.CreateExperimentManagerConnector(configData.Login, configData.Password)
 	experimentManagerConnector.GetExperimentManagerLocation(configData.InformationServiceAddress)
-
-	infrastructureInterface.InitConnectors()
 
 	var old_sm_record model.Sm_record
 	var nonerrorSmCount int
@@ -62,7 +60,7 @@ func main() {
 				// 			getSimulationManagerCode(&sm_record)
 				// 			//unpack sources
 				// 			//pass path to file with command:
-				// 			/*resID := */infrastructureInterface.Connectors[infrastructures[i]].PrepareResource("path")
+				// 			/*resID := */infrastructureInterface.InfrastructureFacades[infrastructures[i]].PrepareResource("path")
 				// 			//check if available
 				// 			sm_record.State = "INITIALIZING"	
 				// 		}
@@ -76,7 +74,7 @@ func main() {
 				// 		} else if sm_record.Cmd_to_execute == "restart" {
 				// 			//restart and INITIALIZING
 				// 		} else {
-				// 			resource_status, err := infrastructureInterface.Connectors[infrastructures[i]].Status(sm.Res_id)
+				// 			resource_status, err := infrastructureInterface.InfrastructureFacades[infrastructures[i]].Status(sm.Res_id)
 				// 			utils.Check(err)
 				// 			if resource_status == "ready" {
 				// 				//install and RUNNING
@@ -98,7 +96,7 @@ func main() {
 				// 	}	
 				// 	case "TERMINATING": {
 				// 		resource_status, err := model.Qstat(&sm_record)
-				// 		resource_status, err := infrastructureInterface.Connectors[infrastructures[i]].Status(sm.Res_id)
+				// 		resource_status, err := infrastructureInterface.InfrastructureFacades[infrastructures[i]].Status(sm.Res_id)
 				// 		utils.Check(err)
 				// 		if resource_status == "released" {
 				// 			//simulation_manager_command(destroy_record) ??
