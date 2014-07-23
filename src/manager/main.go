@@ -40,13 +40,13 @@ func main() {
 			
 			for _, sm_record := range(*sm_records) {
 				old_sm_record = sm_record
-				sm_record.Print() // LOG
+				//sm_record.Print() // LOG
 				
 				// if z==0 {
-				// 	// sm_record.State = "created"
-				// 	// sm_record.Res_id = "QQQQQ" 
-				// 	// sm_record.Cmd_to_execute = ""
-				// 	// experimentManagerConnector.GetSimulationManagerCode(&sm_record, infrastructure)
+				// 	sm_record.State = "created"
+				// 	sm_record.Res_id = "QQQQQ" 
+				// 	sm_record.Cmd_to_execute = ""
+				// 	experimentManagerConnector.GetSimulationManagerCode(&sm_record, infrastructure)
 				// }
 
 
