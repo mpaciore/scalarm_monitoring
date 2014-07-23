@@ -196,3 +196,35 @@ func (this *experimentManagerConnector) NotifyStateChange(sm_record, old_sm_reco
 	}
 	return nil
 }
+
+func (this *experimentManagerConnector) SimulationManagerCommand(command string, sm_record *Sm_record, infrastructure string) error {
+	log.Printf("SimulationManagerCommand")
+
+	data := url.Values{"command": {command}, "record_id": {sm_record.Id}, "infrastructure_name": {infrastructure}}
+	_url := env.Protocol + this.experimentManagerAddress + "/infrastructure/simulation_manager_command"
+
+	request, err := http.NewRequest("POST", _url, strings.NewReader(data.Encode()))	
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	utils.Check(err)
+	request.SetBasicAuth(this.login, this.password)	
+
+	//ONLY FOR TESTING!!! 
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	//ONLY FOR TESTING!!!
+	//client := http.Client{}
+
+	resp, err := client.Do(request)
+	utils.Check(err)
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	utils.Check(err)
+	log.Printf(string(body))
+
+	log.Printf("SimulationManagerCommand: OK")
+
+	return nil
+}
