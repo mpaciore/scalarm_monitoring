@@ -1,10 +1,11 @@
-package infrastructureInterface
+package infrastructureFacade
 
 import (
+	"manager/model"
+	"manager/utils"
 	"os/exec"
 	"io/ioutil"
 	"strings"
-	"manager/utils"
 	"errors"
 )
 
@@ -13,7 +14,7 @@ type QsubFacade struct {}
 //receives path to file with command to execute
 //executes command, extracts resource ID
 //returns new job ID
-func (c QsubFacade) PrepareResource(path string) string {
+func (this QsubFacade) prepareResource(path string) string {
 	data, err := ioutil.ReadFile(path)
 	utils.Check(err)
 	output, err := exec.Command(string(data[:])).Output()
@@ -27,10 +28,10 @@ func (c QsubFacade) PrepareResource(path string) string {
 }
 
 //receives job ID
-//checks job state
-//returns job state in understandable form
-func (c QsubFacade) Status(jobID string) (string, error) {
-	output, err := exec.Command("qstat ", jobID).Output()
+//checks resource state based on job state
+//returns resource state
+func (this QsubFacade) resourceStatus(jobID string) (string, error) {
+	output, err := exec.Command("qstat", jobID).Output()
 	
 	utils.Check(err)
 	
@@ -51,38 +52,25 @@ func (c QsubFacade) Status(jobID string) (string, error) {
 			
 			var res string;
 			switch info[ind-1]{
-				case "C": {res = "deactivated"}
-				case "E": {res = "deactivated"}
-				case "H": {res = "running"}
 				case "Q": {res = "initializing"}
-				case "R": {res = "running"}
-				case "T": {res = "running"}
 				case "W": {res = "initializing"}
+				case "H": {res = "running_sm"}
+				case "R": {res = "running_sm"}
+				case "T": {res = "running_sm"}
+				case "C": {res = "released"}
+				case "E": {res = "released"}
+				case "U": {res = "released"}
 				case "S": {res = "error"}
-				case "U": {res = "deactivated"}
 			}
 			return res, nil
 			
 		} else if strings.HasPrefix(line, "qstat: Unknown Job Id") {
-			return "deactivated", nil
+			return "released", nil
 		}
 	}
 	
-	return "", errors.New("Invalid output")
+	return "error", errors.New("Invalid state")
 }
-
-/*
-	# States from man qstat:
-	# C -  Job is completed after having run/
-	# E -  Job is exiting after having run.
-	# H -  Job is held.
-	# Q -  job is queued, eligible to run or routed.
-	# R -  job is running.
-	# T -  job is being moved to new location.
-	# W -  job is waiting for its execution time
-	# (-a option) to be reached.
-	# S -  (Unicos only) job is suspend.
-*/
 
 /*
 const STATES_MAPPING = map[string]string {
@@ -97,3 +85,80 @@ const STATES_MAPPING = map[string]string {
 		"U"	:	"deactivated", //probably it's not in queue
 	}
 */
+
+/*
+jobID exists:
+	job status:
+		initializing	initializing
+		running 		running_sm
+		deactivated 	released
+		error 			error
+		other 			error
+jobID doesn't exist:
+						available
+*/
+
+//receives sm_record, ExperimentManager connector and infrastructure name
+//decides about action on sm and its resources
+//returns nothing
+func (this QsubFacade) HandleSM(sm_record *model.Sm_record, experimentManagerConnector *model.ExperimentManagerConnector, infrastructure string) {
+	switch sm_record.State {
+		case "CREATED": {
+			if false/*jakaś forma errora*/ {
+				//store_error("not_started") ??
+				//ERROR
+			} else if sm_record.Cmd_to_execute == "stop" {
+				//stop and TERMINATING
+			} else {
+				experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
+				//unpack sources
+				//pass path to file with command:
+				/*resID := */this.prepareResource("path")
+				//check if available
+				sm_record.State = "INITIALIZING"	
+			}
+		}
+		case "INITIALIZING": {
+			if false/*jakaś forma errora*/ {
+				//store_error("not_started") ??
+				//ERROR
+			} else if sm_record.Cmd_to_execute == "stop" {
+				//stop and TERMINATING
+			} else if sm_record.Cmd_to_execute == "restart" {
+				//restart and INITIALIZING
+			} else {
+				resource_status, err := this.resourceStatus(sm_record.Res_id)
+				utils.Check(err)
+				if resource_status == "ready" {
+					//install and RUNNING
+				} else if resource_status == "running_sm" {
+					//RUNNING
+				}
+			}
+		}	
+		case "RUNNING": {
+			if false/*jakaś forma errora*/ {
+				//store_error("terminated", get_log) ??
+				//ERROR
+			} else if sm_record.Cmd_to_execute == "stop" {
+				//stop and TERMINATING
+			} else if sm_record.Cmd_to_execute == "restart" {
+				//restart and INITIALIZING
+				//simulation_manager_command(restart) ??
+			}
+		}	
+		case "TERMINATING": {
+			resource_status, err := this.resourceStatus(sm_record.Res_id)
+			utils.Check(err)
+			if resource_status == "released" {
+				//simulation_manager_command(destroy_record) ??
+				//end
+			} else if sm_record.Cmd_to_execute == "stop" {
+				//stop and TERMINATING
+			}
+		}	
+		case "ERROR": {
+			//simulation_manager_command(destroy_record) ??
+		}
+	}
+}

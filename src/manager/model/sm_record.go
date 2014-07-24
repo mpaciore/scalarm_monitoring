@@ -20,8 +20,8 @@ type Sm_record struct {
 	Cmd_to_execute string 		//akcja do wykonania *to wykonujemy i czyscimy* 
 	Error string				//opcjonalne
 	Pid string					//private machine
-	Job_id string
-	Vm_id string
+	Job_id string				//grid
+	Vm_id string				//cloud
 
 	//Credentials_id string		//bylo w zapytaniu
 	//Start_at string

@@ -3,10 +3,10 @@ monitoring-deamon
 building guide:
 
 for development environment (http):
-  go build manager
+  go install -a manager
   
 for production environment (https):
-  go build -tags prod manager
+  go install -a -tags prod manager
 
-for production environment (https) without certificates checking:
-  go build -tags 'prod certOff' manager
+for production environment (https) without certificates checking (UNSAFE):
+  go install -a -tags "prod certOff" manager

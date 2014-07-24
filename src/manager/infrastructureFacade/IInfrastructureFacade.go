@@ -1,8 +1,9 @@
-package infrastructureInterface
+package infrastructureFacade
 
-import ()
+import (
+	"manager/model"
+)
 
 type IInfrastructureFacade interface {
-	PrepareResource(string) string
-	Status(string) (string, error)
+	HandleSM(*model.Sm_record, *model.ExperimentManagerConnector, string)
 }

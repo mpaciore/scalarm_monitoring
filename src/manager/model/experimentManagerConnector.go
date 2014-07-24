@@ -14,17 +14,17 @@ import (
 	"errors"
 )
 
-type experimentManagerConnector struct {
+type ExperimentManagerConnector struct {
 	login string
 	password string
 	experimentManagerAddress string
 }
 
-func CreateExperimentManagerConnector(login, password string) *experimentManagerConnector {
-	return &experimentManagerConnector{login: login, password: password}
+func CreateExperimentManagerConnector(login, password string) *ExperimentManagerConnector {
+	return &ExperimentManagerConnector{login: login, password: password}
 }
 
-func (this *experimentManagerConnector) GetExperimentManagerLocation(informationServiceAddress string) error {
+func (this *ExperimentManagerConnector) GetExperimentManagerLocation(informationServiceAddress string) error {
 	log.Printf("GetExperimentManagerLocation")
 	
 	resp, err := env.Client.Get(env.Protocol + informationServiceAddress + "/experiment_managers")
@@ -46,7 +46,7 @@ func (this *experimentManagerConnector) GetExperimentManagerLocation(information
 	return nil
 }
 
-func (this *experimentManagerConnector) GetSimulationManagerRecords(infrastructure string) (*[]Sm_record, error) {
+func (this *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructure string) (*[]Sm_record, error) {
 	log.Printf("GetSimulationManagerRecords")
 		
 	url := env.Protocol + this.experimentManagerAddress + "/simulation_managers?infrastructure=" + infrastructure
@@ -72,7 +72,7 @@ func (this *experimentManagerConnector) GetSimulationManagerRecords(infrastructu
 	return &getSimulationManagerRecordsRespond.Sm_records, nil
 }
 
-func (this *experimentManagerConnector) GetSimulationManagerCode(sm_record *Sm_record, infrastructure string) error {
+func (this *ExperimentManagerConnector) GetSimulationManagerCode(sm_record *Sm_record, infrastructure string) error {
 	log.Printf("GetSimulationManagerCode")
 
 	url := env.Protocol + this.experimentManagerAddress + "/simulation_managers/" + sm_record.Id + "/code" + "?infrastructure=" + infrastructure
@@ -129,7 +129,7 @@ func sm_record_marshal(sm_record, old_sm_record *Sm_record) string {
 	return parameters.String()
 }
 
-func (this *experimentManagerConnector) NotifyStateChange(sm_record, old_sm_record *Sm_record, infrastructure string) error {//do zmiany
+func (this *ExperimentManagerConnector) NotifyStateChange(sm_record, old_sm_record *Sm_record, infrastructure string) error {//do zmiany
 	log.Printf("NotifyStateChange")
 
 	//sm_json, err := json.Marshal(sm_record)
@@ -163,7 +163,7 @@ func (this *experimentManagerConnector) NotifyStateChange(sm_record, old_sm_reco
 	return nil
 }
 
-func (this *experimentManagerConnector) SimulationManagerCommand(command string, sm_record *Sm_record, infrastructure string) error {
+func (this *ExperimentManagerConnector) SimulationManagerCommand(command string, sm_record *Sm_record, infrastructure string) error {
 	log.Printf("SimulationManagerCommand")
 
 	data := url.Values{"command": {command}, "record_id": {sm_record.Id}, "infrastructure_name": {infrastructure}}
