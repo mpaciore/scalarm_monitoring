@@ -102,13 +102,12 @@ jobID doesn't exist:
 //decides about action on sm and its resources
 //returns nothing
 func (this QsubFacade) HandleSM(sm_record *model.Sm_record, experimentManagerConnector *model.ExperimentManagerConnector, infrastructure string) {
+	
 	switch sm_record.State {
+
 		case "CREATED": {
-			if false/*jakaś forma errora*/ {
-				//store_error("not_started") ??
-				//ERROR
-			} else if sm_record.Cmd_to_execute == "stop" {
-				//stop and TERMINATING
+			if sm_record.Cmd_to_execute != "" {
+				//execute
 			} else {
 				experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
 				//unpack sources
@@ -118,47 +117,47 @@ func (this QsubFacade) HandleSM(sm_record *model.Sm_record, experimentManagerCon
 				sm_record.State = "INITIALIZING"	
 			}
 		}
+
 		case "INITIALIZING": {
-			if false/*jakaś forma errora*/ {
-				//store_error("not_started") ??
-				//ERROR
-			} else if sm_record.Cmd_to_execute == "stop" {
-				//stop and TERMINATING
-			} else if sm_record.Cmd_to_execute == "restart" {
-				//restart and INITIALIZING
+			if sm_record.Cmd_to_execute != "" {
+				//execute
 			} else {
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
-				if resource_status == "ready" {
-					//install and RUNNING
-				} else if resource_status == "running_sm" {
+				if resource_status == "running_sm" {
 					//RUNNING
 				}
 			}
-		}	
-		case "RUNNING": {
-			if false/*jakaś forma errora*/ {
-				//store_error("terminated", get_log) ??
-				//ERROR
-			} else if sm_record.Cmd_to_execute == "stop" {
-				//stop and TERMINATING
-			} else if sm_record.Cmd_to_execute == "restart" {
-				//restart and INITIALIZING
-				//simulation_manager_command(restart) ??
-			}
-		}	
-		case "TERMINATING": {
-			resource_status, err := this.resourceStatus(sm_record.Res_id)
-			utils.Check(err)
-			if resource_status == "released" {
-				//simulation_manager_command(destroy_record) ??
-				//end
-			} else if sm_record.Cmd_to_execute == "stop" {
-				//stop and TERMINATING
-			}
-		}	
-		case "ERROR": {
-			//simulation_manager_command(destroy_record) ??
 		}
+
+		case "RUNNING": {
+			if sm_record.Cmd_to_execute != "" {
+				//execute
+			} else {
+				resource_status, err := this.resourceStatus(sm_record.Res_id)
+				utils.Check(err)
+				if resource_status != "running_sm" {
+					//ERROR
+				}
+			}
+		}
+
+		case "TERMINATING": {
+			if sm_record.Cmd_to_execute != "" {
+				//execute
+			} else {
+				resource_status, err := this.resourceStatus(sm_record.Res_id)
+				utils.Check(err)
+				if resource_status == "released" {
+					//simulation_manager_command(destroy_record)
+					//end
+				}
+			}
+		}
+
+		case "ERROR": {
+			//simulation_manager_command(destroy_record)
+		}
+		
 	}
 }
