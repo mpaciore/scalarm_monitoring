@@ -97,7 +97,7 @@ jobID exists:
 jobID doesn't exist:
 						available
 */
-
+//PBS
 //receives sm_record, ExperimentManager connector and infrastructure name
 //decides about action on sm and its resources
 //returns nothing
@@ -158,6 +158,6 @@ func (this QsubFacade) HandleSM(sm_record *model.Sm_record, experimentManagerCon
 		case "ERROR": {
 			//simulation_manager_command(destroy_record)
 		}
-		
+
 	}
 }

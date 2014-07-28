@@ -11,18 +11,28 @@ import (
 
 type PrivateMachineFacade struct {}
 
-//receives path to file with command to execute
+//receives command to execute
 //executes command, extracts job ID
 //returns job ID
-func (this PrivateMachineFacade) prepareResource(path string) string {
+func (this PrivateMachineFacade) prepareResource(command string) string {
 
-	//TODO "nohup <command> & echo $!" starts in background and returns PID
-	
-	output, err := exec.Command("nohup", "<command>", "&", "echo", "$!").Output()
+	command := []byte("#!/bin/bash\n" + command + "\necho $! > txt")
+	ioutil.WriteFile("./s.sh", command, 0755)
+	exec.Command("./s.sh").Start()
 
-	pid := string(output[:])
+	noFile := true
+	for noFile {
+		if stat, err := os.Stat("txt"); err == nil && stat.Size() > 0 {
+			noFile = false
+		}
+	}
 
-	return pid
+	data, err := ioutil.ReadFile("txt")
+	os.Remove("./s.sh")
+	os.Remove("./txt")
+
+	utils.Check(err)
+	return string(data[:])
 }
 
 //receives PID
@@ -79,20 +89,81 @@ pid doesn't exist:
 //returns nothing
 func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experimentManagerConnector *model.ExperimentManagerConnector, infrastructure string) {
 	switch sm_record.State {
-		case "CREATED": {
-			
-		}
-		case "INITIALIZING": {
-			
-		}	
-		case "RUNNING": {
-			
-		}	
-		case "TERMINATING": {
-			
-		}	
-		case "ERROR": {
 
+		case "CREATED": {
+			if sm_record.Cmd_to_execute == "stop" {
+				exec.Command(sm_record.Cmd_to_execute_code).Start()
+				sm_record.Cmd_to_execute_code = ""
+				sm_record.Cmd_to_execute = ""
+				sm_record.State = "TERMINATING"
+			} else if sm_record.Cmd_to_execute == "prepare_resource" {
+				resource_status, err := this.resourceStatus(sm_record.Res_id)
+				utils.Check(err)
+				if resource_status == "available" {
+					experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
+					//unpack sources
+					pid := this.prepareResource(sm_record)
+					sm_record.Pid = pid
+					sm_record.Cmd_to_execute_code = ""
+					sm_record.Cmd_to_execute = ""
+					sm_record.State = "INITIALIZING"
+				}
+			}
 		}
+
+		case "INITIALIZING": {
+			if sm_record.Cmd_to_execute == "stop" {
+					exec.Command(sm_record.Cmd_to_execute_code).Start()
+					sm_record.Cmd_to_execute_code = ""
+					sm_record.Cmd_to_execute = ""
+					sm_record.State = "TERMINATING"
+			} else if sm_record.Cmd_to_execute == "restart" {
+					exec.Command(sm_record.Cmd_to_execute_code).Start()
+					sm_record.Cmd_to_execute_code = ""
+					sm_record.Cmd_to_execute = ""
+					sm_record.State = "INITIALIZING"
+			} else {
+				resource_status, err := this.resourceStatus(sm_record.Res_id)
+				utils.Check(err)
+				if resource_status == "running_sm" {
+					sm_record.State = "RUNNING"
+				}
+			}
+		}
+
+		case "RUNNING": {
+			if sm_record.Cmd_to_execute == "stop" {
+					exec.Command(sm_record.Cmd_to_execute_code).Start()
+					sm_record.Cmd_to_execute_code = ""
+					sm_record.Cmd_to_execute = ""
+					sm_record.State = "TERMINATING"
+			} else {
+				resource_status, err := this.resourceStatus(sm_record.Res_id)
+				utils.Check(err)
+				if resource_status != "running_sm" {
+					sm_record.State = "ERROR"
+				}
+			}
+		}
+
+		case "TERMINATING": {
+			if sm_record.Cmd_to_execute == "stop" {
+					exec.Command(sm_record.Cmd_to_execute_code).Start()
+					sm_record.Cmd_to_execute_code = ""
+					sm_record.Cmd_to_execute = ""
+					sm_record.State = "TERMINATING"
+			} else {
+				resource_status, err := this.resourceStatus(sm_record.Res_id)
+				utils.Check(err)
+				if resource_status == "released" {
+					err := experimentManagerConnector.SimulationManagerCommand("destroy_record", sm_record, "private_machine")
+					utils.Check(err)
+				}
+			}
+		}
+
+		case "ERROR": {
+		}
+
 	}
 }

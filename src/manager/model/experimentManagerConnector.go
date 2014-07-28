@@ -109,19 +109,21 @@ func sm_record_marshal(sm_record, old_sm_record *Sm_record) string {
 	parameters.WriteString("{")
 	comma := false
 
-	inner_sm_record_marshal(sm_record.State,          old_sm_record.State,          "state", &comma, &parameters)
-
-	inner_sm_record_marshal(sm_record.Res_id,         old_sm_record.Res_id,         "res_id", &comma, &parameters)
+	inner_sm_record_marshal(sm_record.State,				old_sm_record.State,				"state", &comma, &parameters)
 	
-	inner_sm_record_marshal(sm_record.Pid,            old_sm_record.Pid,            "pid", &comma, &parameters)
+	inner_sm_record_marshal(sm_record.Res_id,				old_sm_record.Res_id,				"res_id", &comma, &parameters)
 	
-	inner_sm_record_marshal(sm_record.Job_id,         old_sm_record.Job_id,         "job_id", &comma, &parameters)
-	 
-	inner_sm_record_marshal(sm_record.Vm_id,          old_sm_record.Vm_id,          "vm_id", &comma, &parameters)
+	inner_sm_record_marshal(sm_record.Pid,					old_sm_record.Pid,					"pid", &comma, &parameters)
 	
-	inner_sm_record_marshal(sm_record.Cmd_to_execute, old_sm_record.Cmd_to_execute, "cmd_to_execute", &comma, &parameters)
+	inner_sm_record_marshal(sm_record.Job_id,				old_sm_record.Job_id,				"job_id", &comma, &parameters)
 	
-	inner_sm_record_marshal(sm_record.Error,          old_sm_record.Error,          "error", &comma, &parameters)
+	inner_sm_record_marshal(sm_record.Vm_id,				old_sm_record.Vm_id,				"vm_id", &comma, &parameters)
+	
+	inner_sm_record_marshal(sm_record.Cmd_to_execute,		old_sm_record.Cmd_to_execute,		"cmd_to_execute", &comma, &parameters)
+	
+	inner_sm_record_marshal(sm_record.Cmd_to_execute_code,	old_sm_record.Cmd_to_execute_code,	"cmd_to_execute_code", &comma, &parameters)
+	
+	inner_sm_record_marshal(sm_record.Error,				old_sm_record.Error,				"error", &comma, &parameters)
 	
 	parameters.WriteString("}")
 

@@ -17,7 +17,8 @@ type Sm_record struct {
 	//Sm_initialized bool			//plgrid: trafilo do kolejki, cloud: czy em już wyslal sm czy nie
 	//Name string					//na ogol = Res_id, dla GUI
 	State string				//aktualny stan sm *to updatujemy*
-	Cmd_to_execute string 		//akcja do wykonania *to wykonujemy i czyscimy* 
+	Cmd_to_execute string		//nazwa akcji do wykonania *to czyscimy* 
+	Cmd_to_execute_code string	//akcja do wykonania *to wykonujemy i czyscimy* 
 	Error string				//opcjonalne
 	Pid string					//private machine
 	Job_id string				//grid
