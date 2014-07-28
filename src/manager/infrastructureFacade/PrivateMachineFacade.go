@@ -5,6 +5,8 @@ import (
 	"manager/utils"
 	"bytes"
 	"io"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"errors"
 )
@@ -16,8 +18,8 @@ type PrivateMachineFacade struct {}
 //returns job ID
 func (this PrivateMachineFacade) prepareResource(command string) string {
 
-	command := []byte("#!/bin/bash\n" + command + "\necho $! > txt")
-	ioutil.WriteFile("./s.sh", command, 0755)
+	cmd := []byte("#!/bin/bash\n" + command + "\necho $! > txt")
+	ioutil.WriteFile("./s.sh", cmd, 0755)
 	exec.Command("./s.sh").Start()
 
 	noFile := true
@@ -102,7 +104,7 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 				if resource_status == "available" {
 					experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
 					//unpack sources
-					pid := this.prepareResource(sm_record)
+					pid := this.prepareResource(sm_record.Cmd_to_execute_code)
 					sm_record.Pid = pid
 					sm_record.Cmd_to_execute_code = ""
 					sm_record.Cmd_to_execute = ""
