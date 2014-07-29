@@ -16,22 +16,22 @@ type PrivateMachineFacade struct {}
 //receives command to execute
 //executes command, extracts job ID
 //returns job ID
-func (this PrivateMachineFacade) prepareResource(command string) string {
+func (this PrivateMachineFacade) prepareResource(command string, path string) string {
 
-	cmd := []byte("#!/bin/bash\n" + command + "\necho $! > txt")
+	cmd := []byte("#!/bin/bash\ncd " + path + "\n" + command + "\necho $! > txt\n")
 	ioutil.WriteFile("./s.sh", cmd, 0755)
 	exec.Command("./s.sh").Start()
 
 	noFile := true
 	for noFile {
-		if stat, err := os.Stat("txt"); err == nil && stat.Size() > 0 {
+		if stat, err := os.Stat(path + "/txt"); err == nil && stat.Size() > 0 {
 			noFile = false
 		}
 	}
 
-	data, err := ioutil.ReadFile("txt")
-	os.Remove("./s.sh")
-	os.Remove("./txt")
+	data, err := ioutil.ReadFile(path + "/txt")
+	os.Remove("s.sh")
+	os.Remove(path + "/txt")
 
 	utils.Check(err)
 	return string(data[:])
@@ -102,9 +102,23 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
 				if resource_status == "available" {
-					experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
-					//unpack sources
-					pid := this.prepareResource(sm_record.Cmd_to_execute_code)
+					err = experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
+					utils.Check(err)
+					
+					//extract first zip
+					utils.Extract("sources_" + sm_record.Id + ".zip", ".")
+					//move second zip one directory up
+					err := exec.Command("bash", "-c", "mv scalarm_simulation_manager_code_" + sm_record.Sm_uuid + "/* .").Run()
+					utils.Check(err)
+					//extract second zip
+					utils.Extract("scalarm_simulation_manager_" + sm_record.Sm_uuid + ".zip", ".")
+					//remove both zips and catalog left from first unzip
+					err = exec.Command("bash", "-c", "rm -rf  sources_" + sm_record.Id + ".zip" + 
+															" scalarm_simulation_manager_code_" + sm_record.Sm_uuid + 
+															" scalarm_simulation_manager_" + sm_record.Sm_uuid + ".zip").Run()
+					utils.Check(err)
+					//run command
+					pid := this.prepareResource(sm_record.Cmd_to_execute_code, "scalarm_simulation_manager_" + sm_record.Sm_uuid)
 					sm_record.Pid = pid
 					sm_record.Cmd_to_execute_code = ""
 					sm_record.Cmd_to_execute = ""

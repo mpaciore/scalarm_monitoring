@@ -14,10 +14,8 @@ type QsubFacade struct {}
 //receives path to file with command to execute
 //executes command, extracts resource ID
 //returns new job ID
-func (this QsubFacade) prepareResource(path string) string {
-	data, err := ioutil.ReadFile(path)
-	utils.Check(err)
-	output, err := exec.Command(string(data[:])).Output()
+func (this QsubFacade) prepareResource(command string) string {
+	output, err := exec.Command("bash", "-c", command).Output()
 	utils.Check(err)
 	
 	stringOutput := string(output[:])
@@ -97,67 +95,98 @@ jobID exists:
 jobID doesn't exist:
 						available
 */
-//PBS
+
 //receives sm_record, ExperimentManager connector and infrastructure name
 //decides about action on sm and its resources
 //returns nothing
 func (this QsubFacade) HandleSM(sm_record *model.Sm_record, experimentManagerConnector *model.ExperimentManagerConnector, infrastructure string) {
-	
-	switch sm_record.State {
+	switch sm_record.State {	
 
 		case "CREATED": {
-			if sm_record.Cmd_to_execute != "" {
-				//execute
-			} else {
-				experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
-				//unpack sources
-				//pass path to file with command:
-				/*resID := */this.prepareResource("path")
-				//check if available
-				sm_record.State = "INITIALIZING"	
+			if sm_record.Cmd_to_execute_code == "stop" {
+				exec.Command(sm_record.Cmd_to_execute).Start()
+				sm_record.Cmd_to_execute = ""
+				sm_record.Cmd_to_execute_code = ""
+				sm_record.State = "TERMINATING"
+			} else if sm_record.Cmd_to_execute_code == "prepare_resource" {
+				resource_status, err := this.resourceStatus(sm_record.Res_id)
+				utils.Check(err)
+				if resource_status == "available" {
+					err = experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
+					utils.Check(err)
+					
+					//extract first zip
+					utils.Extract("sources_" + sm_record.Id + ".zip", ".")
+					//move second zip one directory up
+					err := exec.Command("bash", "-c", "mv scalarm_simulation_manager_code_" + sm_record.Sm_uuid + "/* .").Run()
+					utils.Check(err)
+					//remove both zips and catalog left from first unzip
+					err = exec.Command("bash", "-c", "rm -rf  sources_" + sm_record.Id + ".zip" + 
+															" scalarm_simulation_manager_code_" + sm_record.Sm_uuid).Run()
+					utils.Check(err)
+					//run command
+					pid := this.prepareResource(sm_record.Cmd_to_execute, "scalarm_simulation_manager_" + sm_record.Sm_uuid)
+					fmt.Print(pid)
+					sm_record.Pid = pid
+					sm_record.Cmd_to_execute = ""
+					sm_record.Cmd_to_execute_code = ""
+					sm_record.State = "INITIALIZING"
+				}
 			}
 		}
 
 		case "INITIALIZING": {
-			if sm_record.Cmd_to_execute != "" {
-				//execute
+			if sm_record.Cmd_to_execute_code == "stop" {
+					exec.Command(sm_record.Cmd_to_execute).Start()
+					sm_record.Cmd_to_execute = ""
+					sm_record.Cmd_to_execute_code = ""
+					sm_record.State = "TERMINATING"
+			} else if sm_record.Cmd_to_execute_code == "restart" {
+					exec.Command(sm_record.Cmd_to_execute).Start()
+					sm_record.Cmd_to_execute = ""
+					sm_record.Cmd_to_execute_code = ""
+					sm_record.State = "INITIALIZING"
 			} else {
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
 				if resource_status == "running_sm" {
-					//RUNNING
+					sm_record.State = "RUNNING"
 				}
 			}
 		}
 
 		case "RUNNING": {
-			if sm_record.Cmd_to_execute != "" {
-				//execute
+			if sm_record.Cmd_to_execute_code == "stop" {
+					exec.Command(sm_record.Cmd_to_execute).Start()
+					sm_record.Cmd_to_execute = ""
+					sm_record.Cmd_to_execute_code = ""
+					sm_record.State = "TERMINATING"
 			} else {
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
 				if resource_status != "running_sm" {
-					//ERROR
+					sm_record.State = "ERROR"
 				}
 			}
 		}
 
 		case "TERMINATING": {
-			if sm_record.Cmd_to_execute != "" {
-				//execute
+			if sm_record.Cmd_to_execute_code == "stop" {
+					exec.Command(sm_record.Cmd_to_execute).Start()
+					sm_record.Cmd_to_execute = ""
+					sm_record.Cmd_to_execute_code = ""
+					sm_record.State = "TERMINATING"
 			} else {
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
 				if resource_status == "released" {
-					//simulation_manager_command(destroy_record)
-					//end
+					err := experimentManagerConnector.SimulationManagerCommand("destroy_record", sm_record, "private_machine")
+					utils.Check(err)
 				}
 			}
 		}
 
 		case "ERROR": {
-			//simulation_manager_command(destroy_record)
 		}
-
 	}
 }

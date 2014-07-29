@@ -11,7 +11,7 @@ import (
 func cloneZipItem(f *zip.File, dest string){
 	// Create full directory path
 	path := filepath.Join(dest, f.Name)
-	fmt.Println("Creating", path)
+	//fmt.Println("Creating", path)  change to log
 	err := os.MkdirAll(filepath.Dir(path), os.ModeDir|os.ModePerm)
 	Check(err)
 	
