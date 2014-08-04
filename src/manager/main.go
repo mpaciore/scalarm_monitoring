@@ -6,6 +6,7 @@ import (
 	"manager/utils"
 	"manager/env"
 	"log"
+	"time"
 )
 
 func main() {
@@ -26,7 +27,7 @@ func main() {
 	var nonerrorSmCount int
 
 	for {
-		log.Printf("Starting loop")
+		log.Printf("Starting main loop")
 		nonerrorSmCount = 0
 		for _, infrastructure := range(infrastructures) {
 			log.Printf("Starting " + infrastructure + " loop")
@@ -42,8 +43,9 @@ func main() {
 
 				log.Printf("Starting sm_record handle function")
 				infrastructureFacades[infrastructure].HandleSM(&sm_record, experimentManagerConnector, infrastructure)
+				log.Printf("Ending sm_record handle function")
 				
-				if sm_record.State == "ERROR" {
+				if sm_record.State == "error" {
 					nonerrorSmCount--
 				}
 
@@ -51,11 +53,14 @@ func main() {
 					experimentManagerConnector.NotifyStateChange(&sm_record, &old_sm_record, infrastructure)
 				}
 			}
+			log.Printf("Ending " + infrastructure + " loop")
 		}
 		
 		if nonerrorSmCount == 0 { //TODO nothing running on infrastructure
 			break
 		}
+		log.Printf("Ending main loop")
+		time.Sleep(10 * time.Second)
 	}
 	log.Printf("End")
 }

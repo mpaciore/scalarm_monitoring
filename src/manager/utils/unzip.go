@@ -2,7 +2,6 @@ package utils
 
 import (
 	"archive/zip"
-	"fmt"
 	"os"
 	"io"
 	"path/filepath"

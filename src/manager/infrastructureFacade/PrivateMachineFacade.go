@@ -92,12 +92,12 @@ pid doesn't exist:
 func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experimentManagerConnector *model.ExperimentManagerConnector, infrastructure string) {
 	switch sm_record.State {
 
-		case "CREATED": {
+		case "created": {
 			if sm_record.Cmd_to_execute == "stop" {
 				exec.Command(sm_record.Cmd_to_execute_code).Start()
 				sm_record.Cmd_to_execute_code = ""
 				sm_record.Cmd_to_execute = ""
-				sm_record.State = "TERMINATING"
+				sm_record.State = "terminating"
 			} else if sm_record.Cmd_to_execute == "prepare_resource" {
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
@@ -122,52 +122,52 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 					sm_record.Pid = pid
 					sm_record.Cmd_to_execute_code = ""
 					sm_record.Cmd_to_execute = ""
-					sm_record.State = "INITIALIZING"
+					sm_record.State = "initializing"
 				}
 			}
 		}
 
-		case "INITIALIZING": {
+		case "initializing": {
 			if sm_record.Cmd_to_execute == "stop" {
 					exec.Command(sm_record.Cmd_to_execute_code).Start()
 					sm_record.Cmd_to_execute_code = ""
 					sm_record.Cmd_to_execute = ""
-					sm_record.State = "TERMINATING"
+					sm_record.State = "terminating"
 			} else if sm_record.Cmd_to_execute == "restart" {
 					exec.Command(sm_record.Cmd_to_execute_code).Start()
 					sm_record.Cmd_to_execute_code = ""
 					sm_record.Cmd_to_execute = ""
-					sm_record.State = "INITIALIZING"
+					sm_record.State = "initializing"
 			} else {
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
 				if resource_status == "running_sm" {
-					sm_record.State = "RUNNING"
+					sm_record.State = "running"
 				}
 			}
 		}
 
-		case "RUNNING": {
+		case "running": {
 			if sm_record.Cmd_to_execute == "stop" {
 					exec.Command(sm_record.Cmd_to_execute_code).Start()
 					sm_record.Cmd_to_execute_code = ""
 					sm_record.Cmd_to_execute = ""
-					sm_record.State = "TERMINATING"
+					sm_record.State = "terminating"
 			} else {
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
 				if resource_status != "running_sm" {
-					sm_record.State = "ERROR"
+					sm_record.State = "error"
 				}
 			}
 		}
 
-		case "TERMINATING": {
+		case "terminating": {
 			if sm_record.Cmd_to_execute == "stop" {
 					exec.Command(sm_record.Cmd_to_execute_code).Start()
 					sm_record.Cmd_to_execute_code = ""
 					sm_record.Cmd_to_execute = ""
-					sm_record.State = "TERMINATING"
+					sm_record.State = "terminating"
 			} else {
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
@@ -178,7 +178,7 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 			}
 		}
 
-		case "ERROR": {
+		case "error": {
 		}
 
 	}
