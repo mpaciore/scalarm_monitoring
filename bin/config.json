@@ -1,7 +1,7 @@
 {
-	"InformationServiceAddress": "localhost:11300",
-	"Login": "michal.wrona.4@gmail.com",
-	"Password": "a",
+	"InformationServiceAddress": "149.156.10.32:31034",
+	"Login": "test",
+	"Password": "123test456",
 	"Infrastructures": 
 	[
 		"private_machine"
