@@ -36,7 +36,9 @@ func main() {
 			utils.Check(err)
 
 			nonerrorSmCount += len(*sm_records)
-			
+			if len(*sm_records) == 0 {
+				log.Printf("No sm_records")
+			}
 			for _, sm_record := range(*sm_records) {
 				old_sm_record = sm_record
 				//sm_record.Print() // LOG
@@ -56,10 +58,12 @@ func main() {
 			log.Printf("Ending " + infrastructure + " loop")
 		}
 		
+		log.Printf("Ending main loop")
+		log.Printf("========================================")
 		if nonerrorSmCount == 0 { //TODO nothing running on infrastructure
 			break
 		}
-		log.Printf("Ending main loop")
+		
 		time.Sleep(10 * time.Second)
 	}
 	log.Printf("End")

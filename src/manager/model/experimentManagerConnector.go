@@ -110,6 +110,8 @@ func sm_record_marshal(sm_record, old_sm_record *Sm_record) string {
 	comma := false
 
 	inner_sm_record_marshal(sm_record.State,				old_sm_record.State,				"state", &comma, &parameters)
+
+	inner_sm_record_marshal(sm_record.Resource_status,		old_sm_record.Resource_status,		"resource_status", &comma, &parameters)
 	
 	inner_sm_record_marshal(sm_record.Res_id,				old_sm_record.Res_id,				"res_id", &comma, &parameters)
 	
@@ -124,6 +126,8 @@ func sm_record_marshal(sm_record, old_sm_record *Sm_record) string {
 	inner_sm_record_marshal(sm_record.Cmd_to_execute_code,	old_sm_record.Cmd_to_execute_code,	"cmd_to_execute_code", &comma, &parameters)
 	
 	inner_sm_record_marshal(sm_record.Error,				old_sm_record.Error,				"error", &comma, &parameters)
+	
+	inner_sm_record_marshal(sm_record.Error_log,			old_sm_record.Error_log,			"error_log", &comma, &parameters)
 	
 	parameters.WriteString("}")
 
@@ -156,10 +160,10 @@ func (this *ExperimentManagerConnector) NotifyStateChange(sm_record, old_sm_reco
 
 	log.Printf("Status code: " + strconv.Itoa(resp.StatusCode))
 	if resp.StatusCode == 200 {
-		log.Printf("notifyStateChange: OK")
+		log.Printf("NotifyStateChange: OK")
 		return nil
 	} else {
-		log.Printf("notifyStateChange: ERROR")
+		log.Printf("NotifyStateChange: ERROR")
 		return errors.New("Update failed")
 	}
 	return nil

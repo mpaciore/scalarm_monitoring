@@ -17,9 +17,11 @@ type Sm_record struct {
 	//Sm_initialized bool			//plgrid: trafilo do kolejki, cloud: czy em już wyslal sm czy nie
 	//Name string					//na ogol = Res_id, dla GUI
 	State string				//aktualny stan sm *to updatujemy*
-	Cmd_to_execute string		//nazwa akcji do wykonania *to czyscimy* 
-	Cmd_to_execute_code string	//akcja do wykonania *to wykonujemy i czyscimy* 
+	Resource_status string		//stan zasobu *to updatujemy*
+	Cmd_to_execute string		//akcja do wykonania *to wykonujemy i czyscimy* 
+	Cmd_to_execute_code string	//nazwa akcji do wykonania *to czyscimy* 
 	Error string				//opcjonalne
+	Error_log string			//wynik polecenia get_log *to updatujemy*
 	Pid string					//private machine
 	Job_id string				//grid
 	Vm_id string				//cloud
@@ -30,22 +32,22 @@ type Sm_record struct {
 
 func (sm Sm_record) Print() {
 	fmt.Println(
-		"\n\t_id               \t " + sm.Id +
-		"\n\tres_id            \t " + sm.Res_id + 
+		"\n\t_id				\t " + sm.Id +
+		"\n\tres_id				\t " + sm.Res_id + 
 		//"\n\tuser_id           \t " + sm.User_id +
 		//"\n\texperiment_id     \t " + sm.Experiment_id +
-		//"\n\tsm_uuid           \t " + sm.Sm_uuid +
+		"\n\tsm_uuid			\t " + sm.Sm_uuid +
 		//"\n\tTime_limit        \t", sm.Time_limit, 	
 		//"\n\tSm_initialized_at \t", sm.Sm_initialized_at, 
 		//"\n\tCreated_at        \t", sm.Created_at,
 		//"\n\tSm_initialized    \t", sm.Sm_initialized, 
 		//"\n\tName              \t " + sm.Name +
-		"\n\tPid               \t " + sm.Pid + 
-		"\n\tVm_id             \t " + sm.Vm_id + 
-		"\n\tPid               \t " + sm.Pid + 
-		"\n\tJob_id            \t " + sm.Job_id + 
-		"\n\tState             \t " + sm.State +
-		"\n\tCmd_to_execute    \t " + sm.Cmd_to_execute + 
-		"\n\tError             \t " + sm.Error + 
+		"\n\tpid				\t " + sm.Pid + 
+		"\n\tvm_id				\t " + sm.Vm_id + 
+		"\n\tjob_id				\t " + sm.Job_id + 
+		"\n\tstate				\t " + sm.State +
+		"\n\tresource_status	\t " + sm.Resource_status +
+		"\n\tcmd_to_execute		\t " + sm.Cmd_to_execute + 
+		"\n\terror				\t " + sm.Error + 
 		"\n-----------------")
 }

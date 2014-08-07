@@ -13,10 +13,30 @@ import (
 
 type QsubFacade struct {}
 
-//receives path to file with command to execute
+//receives command to execute
 //executes command, extracts resource ID
 //returns new job ID
 func (this QsubFacade) prepareResource(command string) string {
+	cmd := []byte("#!/bin/bash\n" + command + "\n")
+	ioutil.WriteFile("./s.sh", cmd, 0755)
+	output, err := exec.Command("./s.sh").Output()
+	utils.Check(err)
+	os.Remove("s.sh")
+	
+	stringOutput := string(output[:])
+	jobID := strings.TrimSpace(stringOutput)
+	log.Printf(jobID)
+	return jobID
+
+	//ERROR:
+	//full output to log
+}
+
+
+//receives command to execute
+//executes command, extracts resource ID
+//returns new job ID
+func (this QsubFacade) restart(command string) string {
 	log.Printf("Executing: " + command)
 
 	cmd := []byte("#!/bin/bash\n" + command + "\n")
@@ -47,9 +67,7 @@ func (this QsubFacade) resourceStatus(jobID string) (string, error) {
 	ioutil.WriteFile("./s.sh", cmd, 0755)
 	output, err := exec.Command("bash", "-c", "./s.sh").CombinedOutput()
 	log.Printf("qstat response:\n" + string(output))
-	if err != nil{
-		log.Printf("Warning: non-nil error: %v", err)
-	}
+	utils.Check(err)
 	os.Remove("s.sh")
 	
 	string_output := string(output[:])
@@ -77,7 +95,6 @@ func (this QsubFacade) resourceStatus(jobID string) (string, error) {
 				case "C": {res = "released"}
 				case "E": {res = "released"}
 				case "U": {res = "released"}
-				//suspended
 				case "S": {res = "error"}
 			}
 			return res, nil
@@ -87,7 +104,7 @@ func (this QsubFacade) resourceStatus(jobID string) (string, error) {
 		}
 	}
 	//full output to log
-	return "error", errors.New("Invalid state")
+	return string_output, errors.New("Invalid state")
 }
 
 /*
@@ -122,6 +139,10 @@ jobID doesn't exist:
 func (this QsubFacade) HandleSM(sm_record *model.Sm_record, experimentManagerConnector *model.ExperimentManagerConnector, infrastructure string) {
 	resource_status, err := this.resourceStatus(sm_record.Job_id)
 	utils.Check(err)
+	if err != nil {
+		//full output instead of status
+		sm_record.Error_log = resource_status
+	}
 	log.Printf("Sm_record state: " + sm_record.State)
 	log.Printf("Resource status: " + resource_status)
 	if sm_record.Cmd_to_execute_code == "" {
@@ -130,102 +151,50 @@ func (this QsubFacade) HandleSM(sm_record *model.Sm_record, experimentManagerCon
 		log.Printf("Command to execute: " + sm_record.Cmd_to_execute_code)
 	}
 
-	switch sm_record.State {
 
-		case "created": {
-			if sm_record.Cmd_to_execute_code == "stop" {
-				log.Printf("Action: stop, change state to terminating")
-				exec.Command(sm_record.Cmd_to_execute).Start()
-				sm_record.Cmd_to_execute = ""
-				sm_record.Cmd_to_execute_code = ""
-				sm_record.State = "terminating"
-			} else if sm_record.Cmd_to_execute_code == "prepare_resource" {
-				if resource_status == "available" {
-					log.Printf("Action: prepare_resource, change state to initializing")
-					err = experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
-					utils.Check(err)
-					
-					//extract first zip
-					utils.Extract("sources_" + sm_record.Id + ".zip", ".")
-					//move second zip one directory up
-					err := exec.Command("bash", "-c", "mv scalarm_simulation_manager_code_" + sm_record.Sm_uuid + "/* .").Run()
-					utils.Check(err)
-					//remove both zips and catalog left from first unzip
-					err = exec.Command("bash", "-c", "rm -rf  sources_" + sm_record.Id + ".zip" + 
-															" scalarm_simulation_manager_code_" + sm_record.Sm_uuid).Run()
-					utils.Check(err)
+	if sm_record.Cmd_to_execute_code == "prepare_resource" {
+		if resource_status == "available" {
+			err = experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
+			utils.Check(err)
+			
+			//extract first zip
+			utils.Extract("sources_" + sm_record.Id + ".zip", ".")
+			//move second zip one directory up
+			err = exec.Command("bash", "-c", "mv scalarm_simulation_manager_code_" + sm_record.Sm_uuid + "/* .").Run()
+			utils.Check(err)
+			//remove both zips and catalog left from first unzip
+			err = exec.Command("bash", "-c", "rm -rf  sources_" + sm_record.Id + ".zip" + 
+													" scalarm_simulation_manager_code_" + sm_record.Sm_uuid).Run()
+			utils.Check(err)
 
-					log.Printf("Code files extracted")
+			log.Printf("Code files extracted")
 
-					//run command
-					jobID := this.prepareResource(sm_record.Cmd_to_execute)
-					log.Printf("Job_id: " + jobID)
-					sm_record.Job_id = jobID
-					sm_record.Cmd_to_execute = ""
-					sm_record.Cmd_to_execute_code = ""
-					sm_record.State = "initializing"
-				}
-			}
+			//run command
+			log.Printf("Executing: " + sm_record.Cmd_to_execute)
+			jobID := this.prepareResource(sm_record.Cmd_to_execute)
+			log.Printf("Job_id: " + jobID)
+			sm_record.Job_id = jobID
 		}
-
-		case "initializing": {
-			if sm_record.Cmd_to_execute_code == "stop" {
-					log.Printf("Action: stop, change state to terminating")
-					exec.Command(sm_record.Cmd_to_execute).Start()
-					sm_record.Cmd_to_execute = ""
-					sm_record.Cmd_to_execute_code = ""
-					sm_record.State = "terminating"
-			} else if sm_record.Cmd_to_execute_code == "restart" {
-					log.Printf("Action: restart, change state to initializing")
-					exec.Command(sm_record.Cmd_to_execute).Start()
-					sm_record.Cmd_to_execute = ""
-					sm_record.Cmd_to_execute_code = ""
-					sm_record.State = "initializing"
-			} else {
-				if resource_status == "running_sm" || resource_status == "released" {
-					log.Printf("Action: change state to running")
-					sm_record.State = "running"
-				}
-			}
-		}
-
-		case "running": {
-			if sm_record.Cmd_to_execute_code == "stop" {
-					log.Printf("Action: stop, change state to terminating")
-					exec.Command(sm_record.Cmd_to_execute).Start()
-					sm_record.Cmd_to_execute = ""
-					sm_record.Cmd_to_execute_code = ""
-					sm_record.State = "terminating"
-			} else {
-				if resource_status != "running_sm" {
-					//log.Printf("Store error")
-					log.Printf("Action: change state to error")
-					sm_record.State = "error"
-				}
-			}
-		}
-
-		case "terminating": {
-			if sm_record.Cmd_to_execute_code == "stop" {
-					log.Printf("Action: stop, change state to terminating")
-					exec.Command(sm_record.Cmd_to_execute).Start()
-					sm_record.Cmd_to_execute = ""
-					sm_record.Cmd_to_execute_code = ""
-					sm_record.State = "terminating"
-			} else {
-				if resource_status == "released" {
-					log.Printf("Action: delete record")
-					err := experimentManagerConnector.SimulationManagerCommand("destroy_record", sm_record, "private_machine")
-					utils.Check(err)
-				}
-			}
-		}
-
-		case "error": {
-		}
-
-		default: {
-			log.Printf("Unrecognized sm_record state")
-		}
+	} else if sm_record.Cmd_to_execute_code == "stop" {
+		log.Printf("Executing: " + sm_record.Cmd_to_execute)
+		output, err := exec.Command("bash", "-c", sm_record.Cmd_to_execute).CombinedOutput()
+		utils.Check(err)
+		log.Printf("Response:\n" + string(output[:]))
+	} else if sm_record.Cmd_to_execute_code == "restart" {
+		log.Printf("Executing: " + sm_record.Cmd_to_execute)
+		jobID := this.restart(sm_record.Cmd_to_execute)
+		log.Printf("Job_id: " + jobID)
+		sm_record.Job_id = jobID
+	} else if sm_record.Cmd_to_execute_code == "get_log" {
+		log.Printf("Executing: " + sm_record.Cmd_to_execute)
+		output, err := exec.Command("bash", "-c", sm_record.Cmd_to_execute).CombinedOutput()
+		utils.Check(err)
+		log.Printf("Response:\n" + string(output[:]))
+		sm_record.Error_log = string(output[:])
 	}
+
+
+	sm_record.Cmd_to_execute = ""
+	sm_record.Cmd_to_execute_code = ""
+	sm_record.Resource_status = resource_status
 }
