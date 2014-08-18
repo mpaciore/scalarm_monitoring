@@ -1,7 +1,7 @@
 package infrastructureFacade
 
 import (
-	"manager/model"
+	"monitoring_daemon/manager/model"
 )
 
 type IInfrastructureFacade interface {

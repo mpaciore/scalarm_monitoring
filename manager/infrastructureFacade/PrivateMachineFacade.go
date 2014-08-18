@@ -1,8 +1,8 @@
 package infrastructureFacade
 
 import (
-	"manager/model"
-	"manager/utils"
+	"monitoring_daemon/manager/model"
+	"monitoring_daemon/manager/utils"
 	"bytes"
 	"io"
 	"io/ioutil"
