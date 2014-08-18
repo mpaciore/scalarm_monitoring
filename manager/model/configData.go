@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"encoding/json"
-	"manager/utils"
+	"monitoring_daemon/manager/utils"
 	//"errors"
 )
 

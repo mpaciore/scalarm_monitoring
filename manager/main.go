@@ -1,15 +1,21 @@
 package main
 
 import (
-	"manager/model"
-	"manager/infrastructureFacade"
-	"manager/utils"
-	"manager/env"
+	"monitoring_daemon/manager/model"
+	"monitoring_daemon/manager/infrastructureFacade"
+	"monitoring_daemon/manager/utils"
+	"monitoring_daemon/manager/env"
 	"log"
 	"time"
 )
 
 func main() {
+
+	if !utils.RegisterWorking() {
+		return
+	}
+	defer utils.UnregisterWorking()
+
 	log.Printf("Protocol: " + env.Protocol)
 	if env.CertOff == true {
 		log.Printf("Certificate check disable: true")
@@ -39,6 +45,7 @@ func main() {
 			if len(*sm_records) == 0 {
 				log.Printf("No sm_records")
 			}
+
 			for _, sm_record := range(*sm_records) {
 				old_sm_record = sm_record
 				//sm_record.Print() // LOG

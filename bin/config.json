@@ -1,9 +1,0 @@
-{
-	"InformationServiceAddress": "149.156.10.32:31034",
-	"Login": "test",
-	"Password": "123test456",
-	"Infrastructures": 
-	[
-		"private_machine"
-	]
-}
