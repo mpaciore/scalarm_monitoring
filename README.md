@@ -9,7 +9,7 @@ Installation guide:
 ---------------------- 
 Go 
 -- 
-To build and install load balancer you need to install go programming language. 
+To build and install monitoring daemon you need to install go programming language. 
 You can install it from official binary distribution: 
 
 https://golang.org/doc/install
@@ -56,5 +56,5 @@ Infrastructures - list of infrastructures monitor has to check for records
 
 Run 
 ---- 
-Before running program you have to copy contents of config folder to folder with executable of load balancer. By default it will be $GOPATH/bin 
+Before running program you have to copy contents of config folder to folder with executable of monitoring daemon. By default it will be $GOPATH/bin 
 
