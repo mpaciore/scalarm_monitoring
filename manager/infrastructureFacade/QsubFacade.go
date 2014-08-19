@@ -1,17 +1,17 @@
 package infrastructureFacade
 
 import (
+	"errors"
+	"io/ioutil"
+	"log"
 	"monitoring_daemon/manager/model"
 	"monitoring_daemon/manager/utils"
+	"os"
 	"os/exec"
 	"strings"
-	"errors"
-	"log"
-	"io/ioutil"
-	"os"
 )
 
-type QsubFacade struct {}
+type QsubFacade struct{}
 
 //receives command to execute
 //executes command, extracts resource ID
@@ -20,18 +20,17 @@ func (this QsubFacade) prepareResource(command string) string {
 	cmd := []byte("#!/bin/bash\n" + command + "\n")
 	ioutil.WriteFile("./s.sh", cmd, 0755)
 	output, err := exec.Command("./s.sh").Output()
+	log.Printf("Response:\n" + string(output[:]))
 	utils.Check(err)
 	os.Remove("s.sh")
-	
+
 	stringOutput := string(output[:])
 	jobID := strings.TrimSpace(stringOutput)
-	log.Printf(jobID)
 	return jobID
 
 	//ERROR:
 	//full output to log
 }
-
 
 //receives command to execute
 //executes command, extracts resource ID
@@ -42,12 +41,12 @@ func (this QsubFacade) restart(command string) string {
 	cmd := []byte("#!/bin/bash\n" + command + "\n")
 	ioutil.WriteFile("./s.sh", cmd, 0755)
 	output, err := exec.Command("./s.sh").Output()
+	log.Printf("Response:\n" + string(output[:]))
 	utils.Check(err)
 	os.Remove("s.sh")
-	
+
 	stringOutput := string(output[:])
 	jobID := strings.TrimSpace(stringOutput)
-	log.Printf(jobID)
 	return jobID
 
 	//ERROR:
@@ -66,39 +65,65 @@ func (this QsubFacade) resourceStatus(jobID string) (string, error) {
 	cmd := []byte("#!/bin/bash\nqstat " + jobID + "\n")
 	ioutil.WriteFile("./s.sh", cmd, 0755)
 	output, err := exec.Command("bash", "-c", "./s.sh").CombinedOutput()
-	log.Printf("qstat response:\n" + string(output))
+	log.Printf("Response:\n" + string(output[:]))
 	utils.Check(err)
 	os.Remove("s.sh")
-	
+
 	string_output := string(output[:])
-	
-	for _, line := range(strings.Split(string_output, "\n")) {
-	
-	
+
+	for _, line := range strings.Split(string_output, "\n") {
+
 		if strings.HasPrefix(line, strings.Split(jobID, ".")[0]) {
 			info := strings.Split(line, " ")
 			ind := 0
 			for i := 0; i <= 4; {
-				if(info[ind] != ""){
-					i++;
+				if info[ind] != "" {
+					i++
 				}
-				ind++;
+				ind++
 			}
-			
-			var res string;
-			switch info[ind-1]{
-				case "Q": {res = "initializing"}
-				case "W": {res = "initializing"}
-				case "H": {res = "running_sm"}
-				case "R": {res = "running_sm"}
-				case "T": {res = "running_sm"}
-				case "C": {res = "released"}
-				case "E": {res = "released"}
-				case "U": {res = "released"}
-				case "S": {res = "error"}
+
+			var res string
+			switch info[ind-1] {
+			case "Q":
+				{
+					res = "initializing"
+				}
+			case "W":
+				{
+					res = "initializing"
+				}
+			case "H":
+				{
+					res = "running_sm"
+				}
+			case "R":
+				{
+					res = "running_sm"
+				}
+			case "T":
+				{
+					res = "running_sm"
+				}
+			case "C":
+				{
+					res = "released"
+				}
+			case "E":
+				{
+					res = "released"
+				}
+			case "U":
+				{
+					res = "released"
+				}
+			case "S":
+				{
+					res = "error"
+				}
 			}
 			return res, nil
-			
+
 		} else if strings.HasPrefix(line, "qstat: Unknown Job Id") {
 			return "released", nil
 		}
@@ -151,20 +176,19 @@ func (this QsubFacade) HandleSM(sm_record *model.Sm_record, experimentManagerCon
 		log.Printf("Command to execute: " + sm_record.Cmd_to_execute_code)
 	}
 
-
 	if sm_record.Cmd_to_execute_code == "prepare_resource" {
 		if resource_status == "available" {
 			err = experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
 			utils.Check(err)
-			
+
 			//extract first zip
-			utils.Extract("sources_" + sm_record.Id + ".zip", ".")
+			utils.Extract("sources_"+sm_record.Id+".zip", ".")
 			//move second zip one directory up
-			err = exec.Command("bash", "-c", "mv scalarm_simulation_manager_code_" + sm_record.Sm_uuid + "/* .").Run()
+			err = exec.Command("bash", "-c", "mv scalarm_simulation_manager_code_"+sm_record.Sm_uuid+"/* .").Run()
 			utils.Check(err)
 			//remove both zips and catalog left from first unzip
-			err = exec.Command("bash", "-c", "rm -rf  sources_" + sm_record.Id + ".zip" + 
-													" scalarm_simulation_manager_code_" + sm_record.Sm_uuid).Run()
+			err = exec.Command("bash", "-c", "rm -rf  sources_"+sm_record.Id+".zip"+
+				" scalarm_simulation_manager_code_"+sm_record.Sm_uuid).Run()
 			utils.Check(err)
 
 			log.Printf("Code files extracted")
@@ -192,7 +216,6 @@ func (this QsubFacade) HandleSM(sm_record *model.Sm_record, experimentManagerCon
 		log.Printf("Response:\n" + string(output[:]))
 		sm_record.Error_log = string(output[:])
 	}
-
 
 	sm_record.Cmd_to_execute = ""
 	sm_record.Cmd_to_execute_code = ""

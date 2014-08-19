@@ -1,17 +1,17 @@
 package infrastructureFacade
 
 import (
+	"errors"
+	"io/ioutil"
+	"log"
 	"monitoring_daemon/manager/model"
 	"monitoring_daemon/manager/utils"
+	"os"
 	"os/exec"
 	"strings"
-	"errors"
-	"log"
-	"io/ioutil"
-	"os"
 )
 
-type QcgFacade struct {}
+type QcgFacade struct{}
 
 //receives command to execute
 //executes command, extracts resource ID
@@ -20,18 +20,17 @@ func (this QcgFacade) prepareResource(command string) string {
 	cmd := []byte("#!/bin/bash\n" + command + "\n")
 	ioutil.WriteFile("./s.sh", cmd, 0755)
 	output, err := exec.Command("./s.sh").Output()
+	log.Printf("Response:\n" + string(output[:]))
 	utils.Check(err)
 	os.Remove("s.sh")
-	
+
 	stringOutput := string(output[:])
 	jobID := strings.TrimSpace(strings.SplitAfter(stringOutput, "jobId = ")[1])
-	log.Printf(jobID)
 	return jobID
 
 	//ERROR:
 	//full output to log
 }
-
 
 //receives command to execute
 //executes command, extracts resource ID
@@ -42,12 +41,12 @@ func (this QcgFacade) restart(command string) string {
 	cmd := []byte("#!/bin/bash\n" + command + "\n")
 	ioutil.WriteFile("./s.sh", cmd, 0755)
 	output, err := exec.Command("./s.sh").Output()
+	log.Printf("Response:\n" + string(output[:]))
 	utils.Check(err)
 	os.Remove("s.sh")
-	
+
 	stringOutput := string(output[:])
 	jobID := strings.TrimSpace(stringOutput)
-	log.Printf(jobID)
 	return jobID
 
 	//ERROR:
@@ -66,29 +65,68 @@ func (this QcgFacade) resourceStatus(jobID string) (string, error) {
 	cmd := []byte("#!/bin/bash\nqcg-info " + jobID + "\n")
 	ioutil.WriteFile("./s.sh", cmd, 0755)
 	output, err := exec.Command("bash", "-c", "./s.sh").CombinedOutput()
-	log.Printf("qcg-info response:\n" + string(output))
+	log.Printf("Response:\n" + string(output[:]))
 	utils.Check(err)
 	os.Remove("s.sh")
-	
+
 	string_output := string(output[:])
 	status := strings.TrimSpace(strings.Split(strings.SplitAfter(string_output, "Status: ")[1], "\n")[0])
-	
-	var res string;
+
+	var res string
 	switch status {
-		case "UNSUBMITTED":		{res = "initializing"}
-		case "UNCOMMITED":		{res = "initializing"}
-		case "QUEUED":			{res = "initializing"}
-		case "PREPROCESSING":	{res = "initializing"}
-		case "PENDING":			{res = "initializing"}
-		case "RUNNING":			{res = "running_sm"}
-		case "STOPPED":			{res = "released"}
-		case "POSTPROCESSING":	{res = "released"}
-		case "FINISHED":		{res = "released"}
-		case "FAILED":			{res = "released"}
-		case "CANCELED":		{res = "released"}
-		case "UNKNOWN":			{res = "error"}
-		//full output to log
-		default:				{return string_output, errors.New("Invalid state")}
+	case "UNSUBMITTED":
+		{
+			res = "initializing"
+		}
+	case "UNCOMMITED":
+		{
+			res = "initializing"
+		}
+	case "QUEUED":
+		{
+			res = "initializing"
+		}
+	case "PREPROCESSING":
+		{
+			res = "initializing"
+		}
+	case "PENDING":
+		{
+			res = "initializing"
+		}
+	case "RUNNING":
+		{
+			res = "running_sm"
+		}
+	case "STOPPED":
+		{
+			res = "released"
+		}
+	case "POSTPROCESSING":
+		{
+			res = "released"
+		}
+	case "FINISHED":
+		{
+			res = "released"
+		}
+	case "FAILED":
+		{
+			res = "released"
+		}
+	case "CANCELED":
+		{
+			res = "released"
+		}
+	case "UNKNOWN":
+		{
+			res = "error"
+		}
+	//full output to log
+	default:
+		{
+			return string_output, errors.New("Invalid state")
+		}
 	}
 	return res, nil
 
@@ -139,20 +177,19 @@ func (this QcgFacade) HandleSM(sm_record *model.Sm_record, experimentManagerConn
 		log.Printf("Command to execute: " + sm_record.Cmd_to_execute_code)
 	}
 
-
 	if sm_record.Cmd_to_execute_code == "prepare_resource" {
 		if resource_status == "available" {
 			err = experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
 			utils.Check(err)
-			
+
 			//extract first zip
-			utils.Extract("sources_" + sm_record.Id + ".zip", ".")
+			utils.Extract("sources_"+sm_record.Id+".zip", ".")
 			//move second zip one directory up
-			err = exec.Command("bash", "-c", "mv scalarm_simulation_manager_code_" + sm_record.Sm_uuid + "/* .").Run()
+			err = exec.Command("bash", "-c", "mv scalarm_simulation_manager_code_"+sm_record.Sm_uuid+"/* .").Run()
 			utils.Check(err)
 			//remove both zips and catalog left from first unzip
-			err = exec.Command("bash", "-c", "rm -rf  sources_" + sm_record.Id + ".zip" + 
-													" scalarm_simulation_manager_code_" + sm_record.Sm_uuid).Run()
+			err = exec.Command("bash", "-c", "rm -rf  sources_"+sm_record.Id+".zip"+
+				" scalarm_simulation_manager_code_"+sm_record.Sm_uuid).Run()
 			utils.Check(err)
 
 			log.Printf("Code files extracted")
@@ -180,7 +217,6 @@ func (this QcgFacade) HandleSM(sm_record *model.Sm_record, experimentManagerConn
 		log.Printf("Response:\n" + string(output[:]))
 		sm_record.Error_log = string(output[:])
 	}
-
 
 	sm_record.Cmd_to_execute = ""
 	sm_record.Cmd_to_execute_code = ""
