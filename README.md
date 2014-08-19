@@ -32,7 +32,7 @@ Now you can install monitoring:
 ```` 
 go install monitoring_daemon/monitoringDaemon 
 ```` 
-This command will install load balancer in $GOPATH/bin. It's name will be monitoringDaemon 
+This command will install monitoring daemon in $GOPATH/bin. It's name will be monitoringDaemon 
 Build Options 
 ---------------- 
 With -tags option you can specify build options:  
