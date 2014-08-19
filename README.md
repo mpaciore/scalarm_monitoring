@@ -3,6 +3,7 @@ Monitoring Daemon
 Contents 
 ---------- 
 * monitoringDaemon - main monitoring daemon program
+* config - configuration for monitoring daemon
 
 Installation guide: 
 ---------------------- 
