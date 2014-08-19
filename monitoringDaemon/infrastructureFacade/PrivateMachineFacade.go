@@ -1,17 +1,17 @@
 package infrastructureFacade
 
 import (
-	"monitoring_daemon/manager/model"
-	"monitoring_daemon/manager/utils"
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
+	"monitoring_daemon/monitoringDaemon/model"
+	"monitoring_daemon/monitoringDaemon/utils"
 	"os"
 	"os/exec"
-	"errors"
 )
 
-type PrivateMachineFacade struct {}
+type PrivateMachineFacade struct{}
 
 //receives command to execute
 //executes command, extracts job ID
@@ -48,7 +48,7 @@ func (this PrivateMachineFacade) resourceStatus(pid string) (string, error) {
 	command1 := exec.Command("ps", pid)
 	command2 := exec.Command("tail", "-n", "+2")
 
-	pipeOutput, pipeInput := io.Pipe() 
+	pipeOutput, pipeInput := io.Pipe()
 	command1.Stdout = pipeInput
 	command2.Stdin = pipeOutput
 
@@ -66,12 +66,12 @@ func (this PrivateMachineFacade) resourceStatus(pid string) (string, error) {
 	err = command2.Wait()
 	utils.Check(err)
 
-	if(output.String() == "") {
+	if output.String() == "" {
 		return "released", nil
 	} else {
 		return "running_sm", nil
 	}
-	
+
 	return "error", errors.New("Invalid state")
 }
 
@@ -85,14 +85,14 @@ pid doesn't exist:
 						available
 */
 
-
 //receives sm_record, ExperimentManager connector and infrastructure name
 //decides about action on sm and its resources
 //returns nothing
 func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experimentManagerConnector *model.ExperimentManagerConnector, infrastructure string) {
 	switch sm_record.State {
 
-		case "created": {
+	case "created":
+		{
 			if sm_record.Cmd_to_execute == "stop" {
 				exec.Command(sm_record.Cmd_to_execute_code).Start()
 				sm_record.Cmd_to_execute_code = ""
@@ -104,21 +104,21 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 				if resource_status == "available" {
 					err = experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
 					utils.Check(err)
-					
+
 					//extract first zip
-					utils.Extract("sources_" + sm_record.Id + ".zip", ".")
+					utils.Extract("sources_"+sm_record.Id+".zip", ".")
 					//move second zip one directory up
-					err := exec.Command("bash", "-c", "mv scalarm_simulation_manager_code_" + sm_record.Sm_uuid + "/* .").Run()
+					err := exec.Command("bash", "-c", "mv scalarm_simulation_manager_code_"+sm_record.Sm_uuid+"/* .").Run()
 					utils.Check(err)
 					//extract second zip
-					utils.Extract("scalarm_simulation_manager_" + sm_record.Sm_uuid + ".zip", ".")
+					utils.Extract("scalarm_simulation_manager_"+sm_record.Sm_uuid+".zip", ".")
 					//remove both zips and catalog left from first unzip
-					err = exec.Command("bash", "-c", "rm -rf  sources_" + sm_record.Id + ".zip" + 
-															" scalarm_simulation_manager_code_" + sm_record.Sm_uuid + 
-															" scalarm_simulation_manager_" + sm_record.Sm_uuid + ".zip").Run()
+					err = exec.Command("bash", "-c", "rm -rf  sources_"+sm_record.Id+".zip"+
+						" scalarm_simulation_manager_code_"+sm_record.Sm_uuid+
+						" scalarm_simulation_manager_"+sm_record.Sm_uuid+".zip").Run()
 					utils.Check(err)
 					//run command
-					pid := this.prepareResource(sm_record.Cmd_to_execute_code, "scalarm_simulation_manager_" + sm_record.Sm_uuid)
+					pid := this.prepareResource(sm_record.Cmd_to_execute_code, "scalarm_simulation_manager_"+sm_record.Sm_uuid)
 					sm_record.Pid = pid
 					sm_record.Cmd_to_execute_code = ""
 					sm_record.Cmd_to_execute = ""
@@ -127,17 +127,18 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 			}
 		}
 
-		case "initializing": {
+	case "initializing":
+		{
 			if sm_record.Cmd_to_execute == "stop" {
-					exec.Command(sm_record.Cmd_to_execute_code).Start()
-					sm_record.Cmd_to_execute_code = ""
-					sm_record.Cmd_to_execute = ""
-					sm_record.State = "terminating"
+				exec.Command(sm_record.Cmd_to_execute_code).Start()
+				sm_record.Cmd_to_execute_code = ""
+				sm_record.Cmd_to_execute = ""
+				sm_record.State = "terminating"
 			} else if sm_record.Cmd_to_execute == "restart" {
-					exec.Command(sm_record.Cmd_to_execute_code).Start()
-					sm_record.Cmd_to_execute_code = ""
-					sm_record.Cmd_to_execute = ""
-					sm_record.State = "initializing"
+				exec.Command(sm_record.Cmd_to_execute_code).Start()
+				sm_record.Cmd_to_execute_code = ""
+				sm_record.Cmd_to_execute = ""
+				sm_record.State = "initializing"
 			} else {
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
@@ -147,12 +148,13 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 			}
 		}
 
-		case "running": {
+	case "running":
+		{
 			if sm_record.Cmd_to_execute == "stop" {
-					exec.Command(sm_record.Cmd_to_execute_code).Start()
-					sm_record.Cmd_to_execute_code = ""
-					sm_record.Cmd_to_execute = ""
-					sm_record.State = "terminating"
+				exec.Command(sm_record.Cmd_to_execute_code).Start()
+				sm_record.Cmd_to_execute_code = ""
+				sm_record.Cmd_to_execute = ""
+				sm_record.State = "terminating"
 			} else {
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
@@ -162,12 +164,13 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 			}
 		}
 
-		case "terminating": {
+	case "terminating":
+		{
 			if sm_record.Cmd_to_execute == "stop" {
-					exec.Command(sm_record.Cmd_to_execute_code).Start()
-					sm_record.Cmd_to_execute_code = ""
-					sm_record.Cmd_to_execute = ""
-					sm_record.State = "terminating"
+				exec.Command(sm_record.Cmd_to_execute_code).Start()
+				sm_record.Cmd_to_execute_code = ""
+				sm_record.Cmd_to_execute = ""
+				sm_record.State = "terminating"
 			} else {
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
@@ -178,7 +181,8 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 			}
 		}
 
-		case "error": {
+	case "error":
+		{
 		}
 
 	}

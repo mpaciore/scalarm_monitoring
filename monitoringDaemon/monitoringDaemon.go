@@ -2,10 +2,10 @@ package main
 
 import (
 	"log"
-	"monitoring_daemon/manager/env"
-	"monitoring_daemon/manager/infrastructureFacade"
-	"monitoring_daemon/manager/model"
-	"monitoring_daemon/manager/utils"
+	"monitoring_daemon/monitoringDaemon/env"
+	"monitoring_daemon/monitoringDaemon/infrastructureFacade"
+	"monitoring_daemon/monitoringDaemon/model"
+	"monitoring_daemon/monitoringDaemon/utils"
 	"time"
 )
 

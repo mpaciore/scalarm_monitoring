@@ -1,8 +1,8 @@
 package model
 
 import (
-	"monitoring_daemon/manager/env"
-	"monitoring_daemon/manager/utils"
+	"monitoring_daemon/monitoringDaemon/env"
+	"monitoring_daemon/monitoringDaemon/utils"
 	"net/http"
 	"io/ioutil"
 	"net/url"

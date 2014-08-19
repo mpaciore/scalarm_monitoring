@@ -4,19 +4,19 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
-	"monitoring_daemon/manager/model"
-	"monitoring_daemon/manager/utils"
+	"monitoring_daemon/monitoringDaemon/model"
+	"monitoring_daemon/monitoringDaemon/utils"
 	"os"
 	"os/exec"
 	"strings"
 )
 
-type QcgFacade struct{}
+type QsubFacade struct{}
 
 //receives command to execute
 //executes command, extracts resource ID
 //returns new job ID
-func (this QcgFacade) prepareResource(command string) string {
+func (this QsubFacade) prepareResource(command string) string {
 	cmd := []byte("#!/bin/bash\n" + command + "\n")
 	ioutil.WriteFile("./s.sh", cmd, 0755)
 	output, err := exec.Command("./s.sh").Output()
@@ -25,7 +25,7 @@ func (this QcgFacade) prepareResource(command string) string {
 	os.Remove("s.sh")
 
 	stringOutput := string(output[:])
-	jobID := strings.TrimSpace(strings.SplitAfter(stringOutput, "jobId = ")[1])
+	jobID := strings.TrimSpace(stringOutput)
 	return jobID
 
 	//ERROR:
@@ -35,7 +35,7 @@ func (this QcgFacade) prepareResource(command string) string {
 //receives command to execute
 //executes command, extracts resource ID
 //returns new job ID
-func (this QcgFacade) restart(command string) string {
+func (this QsubFacade) restart(command string) string {
 	log.Printf("Executing: " + command)
 
 	cmd := []byte("#!/bin/bash\n" + command + "\n")
@@ -56,13 +56,13 @@ func (this QcgFacade) restart(command string) string {
 //receives job ID
 //checks resource state based on job state
 //returns resource state
-func (this QcgFacade) resourceStatus(jobID string) (string, error) {
+func (this QsubFacade) resourceStatus(jobID string) (string, error) {
 	if jobID == "" {
 		return "available", nil
 	}
 
-	log.Printf("Executing: qcg-info " + jobID)
-	cmd := []byte("#!/bin/bash\nqcg-info " + jobID + "\n")
+	log.Printf("Executing: qstat " + jobID)
+	cmd := []byte("#!/bin/bash\nqstat " + jobID + "\n")
 	ioutil.WriteFile("./s.sh", cmd, 0755)
 	output, err := exec.Command("bash", "-c", "./s.sh").CombinedOutput()
 	log.Printf("Response:\n" + string(output[:]))
@@ -70,81 +70,80 @@ func (this QcgFacade) resourceStatus(jobID string) (string, error) {
 	os.Remove("s.sh")
 
 	string_output := string(output[:])
-	status := strings.TrimSpace(strings.Split(strings.SplitAfter(string_output, "Status: ")[1], "\n")[0])
 
-	var res string
-	switch status {
-	case "UNSUBMITTED":
-		{
-			res = "initializing"
-		}
-	case "UNCOMMITED":
-		{
-			res = "initializing"
-		}
-	case "QUEUED":
-		{
-			res = "initializing"
-		}
-	case "PREPROCESSING":
-		{
-			res = "initializing"
-		}
-	case "PENDING":
-		{
-			res = "initializing"
-		}
-	case "RUNNING":
-		{
-			res = "running_sm"
-		}
-	case "STOPPED":
-		{
-			res = "released"
-		}
-	case "POSTPROCESSING":
-		{
-			res = "released"
-		}
-	case "FINISHED":
-		{
-			res = "released"
-		}
-	case "FAILED":
-		{
-			res = "released"
-		}
-	case "CANCELED":
-		{
-			res = "released"
-		}
-	case "UNKNOWN":
-		{
-			res = "error"
-		}
-	//full output to log
-	default:
-		{
-			return string_output, errors.New("Invalid state")
+	for _, line := range strings.Split(string_output, "\n") {
+
+		if strings.HasPrefix(line, strings.Split(jobID, ".")[0]) {
+			info := strings.Split(line, " ")
+			ind := 0
+			for i := 0; i <= 4; {
+				if info[ind] != "" {
+					i++
+				}
+				ind++
+			}
+
+			var res string
+			switch info[ind-1] {
+			case "Q":
+				{
+					res = "initializing"
+				}
+			case "W":
+				{
+					res = "initializing"
+				}
+			case "H":
+				{
+					res = "running_sm"
+				}
+			case "R":
+				{
+					res = "running_sm"
+				}
+			case "T":
+				{
+					res = "running_sm"
+				}
+			case "C":
+				{
+					res = "released"
+				}
+			case "E":
+				{
+					res = "released"
+				}
+			case "U":
+				{
+					res = "released"
+				}
+			case "S":
+				{
+					res = "error"
+				}
+			}
+			return res, nil
+
+		} else if strings.HasPrefix(line, "qstat: Unknown Job Id") {
+			return "released", nil
 		}
 	}
-	return res, nil
-
+	//full output to log
+	return string_output, errors.New("Invalid state")
 }
 
 /*
-# QCG Job states
-    # UNSUBMITTED – task processing suspended because of queue dependencies
-    # UNCOMMITED - task is waiting for processing confirmation
-    # QUEUED – task is waiting in queue for processing
-    # PREPROCESSING – system is preparing environment for task
-    # PENDING – application waits for execution in queuing system in terms of job,
-    # RUNNING – user's appliaction is running in terms of job,
-    # STOPPED – application execution has been completed, but queuing system does not copied results and cleaned environment
-    # POSTPROCESSING – queuing system ends job: copies result files, cleans environment, etc.
-    # FINISHED – job has been completed
-    # FAILED – error processing job
-    # CANCELED – job has been cancelled by user
+const STATES_MAPPING = map[string]string {
+		"C"	:	"deactivated",
+		"E"	:	"deactivated",
+		"H"	:	"running",
+		"Q"	:	"initializing",
+		"R"	:	"running",
+		"T"	:	"running",
+		"W"	:	"initializing",
+		"S"	:	"error",
+		"U"	:	"deactivated", //probably it's not in queue
+	}
 */
 
 /*
@@ -162,7 +161,7 @@ jobID doesn't exist:
 //receives sm_record, ExperimentManager connector and infrastructure name
 //decides about action on sm and its resources
 //returns nothing
-func (this QcgFacade) HandleSM(sm_record *model.Sm_record, experimentManagerConnector *model.ExperimentManagerConnector, infrastructure string) {
+func (this QsubFacade) HandleSM(sm_record *model.Sm_record, experimentManagerConnector *model.ExperimentManagerConnector, infrastructure string) {
 	resource_status, err := this.resourceStatus(sm_record.Job_id)
 	utils.Check(err)
 	if err != nil {
