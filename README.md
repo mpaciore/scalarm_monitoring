@@ -2,7 +2,7 @@ Monitoring Daemon
 ============ 
 Contents 
 ---------- 
-* manager - main monitoring daemon program
+* monitoringDaemon - main monitoring daemon program
 
 Installation guide: 
 ---------------------- 
