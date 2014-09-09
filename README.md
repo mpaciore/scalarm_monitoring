@@ -2,7 +2,7 @@ Monitoring Daemon
 ============ 
 Contents 
 ---------- 
-* monitoringDaemon - main monitoring daemon program
+* scalarm_monitoring_daemon - main monitoring daemon program
 * config - configuration for monitoring daemon
 
 Installation guide: 
