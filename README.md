@@ -32,7 +32,7 @@ Now you can install monitoring:
 ```` 
 go install scalarm_monitoring_daemon 
 ```` 
-This command will install monitoring daemon in $GOPATH/bin. It's name will be scalarm_monitoring_daemon 
+This command will install monitoring daemon in $GOPATH/bin. It's name will be scalarm_monitoring_daemon.
 Build Options 
 ---------------- 
 With -tags option you can specify build options:  
