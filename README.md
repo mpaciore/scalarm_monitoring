@@ -30,7 +30,7 @@ git clone https://github.com/mpaciore/monitoring_daemon.git
 ``` 
 Now you can install monitoring: 
 ```` 
-go install monitoring_daemon/monitoringDaemon 
+go install scalarm_monitoring_daemon 
 ```` 
 This command will install monitoring daemon in $GOPATH/bin. It's name will be monitoringDaemon 
 Build Options 
@@ -42,7 +42,7 @@ With -tags option you can specify build options:
 
 Paramters can be mixed. For example: 
 ``` 
-go install -tags "prod certOff" monitoring_daemon/monitoringDaemon
+go install -tags "prod certOff" scalarm_monitoring_daemon
 ``` 
 Note: Use -a option in go install if you didn't change any files after previous install. 
 Config 
