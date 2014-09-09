@@ -1,0 +1,10 @@
+{
+	"InformationServiceAddress": "149.156.10.32:31034",
+	"Login": "login",
+	"Password": "password",
+	"Infrastructures": 
+	[
+		"qsub"
+		"qcg"
+	]
+}
