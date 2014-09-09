@@ -26,7 +26,7 @@ Installation
 -------------- 
 You can download it directly from GitHub. You have to download it into your $GOPATH/src folder 
 ``` 
-git clone https://github.com/mpaciore/monitoring_daemon.git
+git clone https://github.com/mpaciore/scalarm_monitoring_daemon
 ``` 
 Now you can install monitoring: 
 ```` 
