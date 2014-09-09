@@ -2,10 +2,10 @@ package main
 
 import (
 	"log"
-	"monitoring_daemon/monitoringDaemon/env"
-	"monitoring_daemon/monitoringDaemon/infrastructureFacade"
-	"monitoring_daemon/monitoringDaemon/model"
-	"monitoring_daemon/monitoringDaemon/utils"
+	"scalarm_monitoring_daemon/env"
+	"scalarm_monitoring_daemon/infrastructureFacade"
+	"scalarm_monitoring_daemon/model"
+	"scalarm_monitoring_daemon/utils"
 	"time"
 )
 

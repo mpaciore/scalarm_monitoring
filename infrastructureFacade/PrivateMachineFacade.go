@@ -5,8 +5,8 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"monitoring_daemon/monitoringDaemon/model"
-	"monitoring_daemon/monitoringDaemon/utils"
+	"scalarm_monitoring_daemon/model"
+	"scalarm_monitoring_daemon/utils"
 	"os"
 	"os/exec"
 )

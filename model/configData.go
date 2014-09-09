@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"monitoring_daemon/monitoringDaemon/utils"
+	"scalarm_monitoring_daemon/utils"
 	//"errors"
 )
 

@@ -4,10 +4,10 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
-	"monitoring_daemon/monitoringDaemon/model"
-	"monitoring_daemon/monitoringDaemon/utils"
 	"os"
 	"os/exec"
+	"scalarm_monitoring_daemon/model"
+	"scalarm_monitoring_daemon/utils"
 	"strings"
 )
 
