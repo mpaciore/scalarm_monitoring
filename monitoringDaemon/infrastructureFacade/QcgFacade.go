@@ -61,8 +61,8 @@ func (this QcgFacade) resourceStatus(jobID string) (string, error) {
 		return "available", nil
 	}
 
-	log.Printf("Executing: qcg-info " + jobID)
-	cmd := []byte("#!/bin/bash\nqcg-info " + jobID + "\n")
+	log.Printf("Executing: QCG_ENV_PROXY_DURATION_MIN=12 qcg-info " + jobID)
+	cmd := []byte("#!/bin/bash\nQCG_ENV_PROXY_DURATION_MIN=12 qcg-info " + jobID + "\n")
 	ioutil.WriteFile("./s.sh", cmd, 0755)
 	output, err := exec.Command("bash", "-c", "./s.sh").CombinedOutput()
 	log.Printf("Response:\n" + string(output[:]))
