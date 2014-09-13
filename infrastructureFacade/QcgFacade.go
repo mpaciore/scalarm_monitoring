@@ -70,6 +70,12 @@ func (this QcgFacade) resourceStatus(jobID string) (string, error) {
 	os.Remove("s.sh")
 
 	string_output := string(output[:])
+
+	if strings.Contains(string_output, "Enter GRID pass phrase for this identity:") {
+		log.Printf("Asked for password, cannot monitor this record\n")
+		return string_output, errors.New("Proxy invalid")
+	}
+
 	status := strings.TrimSpace(strings.Split(strings.SplitAfter(string_output, "Status: ")[1], "\n")[0])
 
 	var res string
@@ -168,7 +174,10 @@ func (this QcgFacade) HandleSM(sm_record *model.Sm_record, experimentManagerConn
 	if err != nil {
 		//full output instead of status
 		sm_record.Error_log = resource_status
+		sm_record.Resource_status = "error"
+		return
 	}
+
 	log.Printf("Sm_record state: " + sm_record.State)
 	log.Printf("Resource status: " + resource_status)
 	if sm_record.Cmd_to_execute_code == "" {
