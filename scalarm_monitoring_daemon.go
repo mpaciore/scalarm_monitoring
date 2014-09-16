@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"scalarm_monitoring_daemon/env"
 	"scalarm_monitoring_daemon/infrastructureFacade"
 	"scalarm_monitoring_daemon/model"
 	"scalarm_monitoring_daemon/utils"
@@ -16,15 +15,12 @@ func main() {
 	}
 	defer utils.UnregisterWorking()
 
-	log.Printf("Protocol: " + env.Protocol)
-	if env.CertOff == true {
-		log.Printf("Certificate check disable: true")
-	}
 	configData, err := model.ReadConfiguration()
 	utils.Check(err)
 
 	infrastructures := configData.Infrastructures
-	experimentManagerConnector := model.CreateExperimentManagerConnector(configData.Login, configData.Password)
+	experimentManagerConnector := model.CreateExperimentManagerConnector(configData.Login, configData.Password,
+		configData.ScalarmCertificatePath, configData.ScalarmScheme)
 	experimentManagerConnector.GetExperimentManagerLocation(configData.InformationServiceAddress)
 
 	infrastructureFacades := infrastructureFacade.CreateInfrastructureFacades()

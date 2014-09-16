@@ -4,7 +4,9 @@
 	"Password": "password",
 	"Infrastructures": 
 	[
-		"qsub"
+		"qsub",
 		"qcg"
-	]
+	],
+	"ScalarmCertificatePath" : "cert.pem",
+	"ScalarmScheme" : "https"
 }

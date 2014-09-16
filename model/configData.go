@@ -13,6 +13,8 @@ type ConfigData struct {
 	Login                     string
 	Password                  string
 	Infrastructures           []string
+	ScalarmCertificatePath    string
+	ScalarmScheme             string
 }
 
 func ReadConfiguration() (*ConfigData, error) {
