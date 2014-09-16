@@ -27,6 +27,10 @@ func ReadConfiguration() (*ConfigData, error) {
 	err = json.Unmarshal(data, &configData)
 	utils.Check(err)
 
+	if configData.ScalarmScheme == "" {
+		configData.ScalarmScheme = "https"
+	}
+
 	log.Printf("\tinformation service address: " + configData.InformationServiceAddress)
 	log.Printf("\tlogin:                       " + configData.Login)
 	log.Printf("\tpassword:                    " + configData.Password)
