@@ -33,26 +33,34 @@ Now you can install monitoring:
 go install scalarm_monitoring_daemon 
 ```` 
 This command will install monitoring daemon in $GOPATH/bin. It's name will be scalarm_monitoring_daemon.
-Build Options 
----------------- 
-With -tags option you can specify build options:  
-* no parameter: http requests 
-* prod : https requests 
-* certOff: disabling certificate checking for https 
 
-Paramters can be mixed. For example: 
-``` 
-go install -tags "prod certOff" scalarm_monitoring_daemon
-``` 
-Note: Use -a option in go install if you didn't change any files after previous install. 
 Config 
 -------- 
 The config folder contains single file config.json that contains required informations for monitor:
 
 InformationServiceAddress - address of working Information Service
+
 Login, Password - Scalarm credentials
+
 Infrastructures - list of infrastructures monitor has to check for records
 
+Example config:
+
+```
+{
+	"InformationServiceAddress": "149.156.10.32:31034",
+	"Login": "login",
+	"Password": "password",
+	"Infrastructures": 
+	[
+		"qsub",
+		"qcg"
+	],
+	"ScalarmCertificatePath" : "cert.pem",
+	"ScalarmScheme" : "https"
+}
+```
+Example config can be found in config/config.json.
 
 Run 
 ---- 
