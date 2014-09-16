@@ -10,8 +10,8 @@ import (
 
 func main() {
 
-	if !utils.RegisterWorking() {
-		return
+	if err := utils.RegisterWorking(); err != nil {
+
 	}
 	defer utils.UnregisterWorking()
 
@@ -19,11 +19,20 @@ func main() {
 	utils.Check(err)
 
 	infrastructures := configData.Infrastructures
-	experimentManagerConnector := model.CreateExperimentManagerConnector(configData.Login, configData.Password,
+	experimentManagerConnector := model.NewExperimentManagerConnector(configData.Login, configData.Password,
 		configData.ScalarmCertificatePath, configData.ScalarmScheme)
-	experimentManagerConnector.GetExperimentManagerLocation(configData.InformationServiceAddress)
 
-	infrastructureFacades := infrastructureFacade.CreateInfrastructureFacades()
+	if _, err := utils.RepetitiveCaller(
+		func() (interface{}, error) {
+			return nil, experimentManagerConnector.GetExperimentManagerLocation(configData.InformationServiceAddress)
+		},
+		nil,
+		"GetExperimentManagerLocation",
+	); err != nil {
+		log.Fatal("Unable to get experiment manager location")
+	}
+
+	infrastructureFacades := infrastructureFacade.NewInfrastructureFacades()
 
 	var old_sm_record model.Sm_record
 	var nonerrorSmCount int
@@ -35,8 +44,19 @@ func main() {
 		for _, infrastructure := range infrastructures {
 			log.Printf("Starting " + infrastructure + " loop")
 
-			sm_records, err := experimentManagerConnector.GetSimulationManagerRecords(infrastructure)
-			utils.Check(err)
+			var sm_records *[]model.Sm_record
+
+			if raw_sm_records, err := utils.RepetitiveCaller(
+				func() (interface{}, error) {
+					return experimentManagerConnector.GetSimulationManagerRecords(infrastructure)
+				},
+				nil,
+				"GetSimulationManagerRecords",
+			); err != nil {
+				log.Fatal("Unable to get simulation manager records")
+			} else {
+				sm_records = raw_sm_records.(*[]model.Sm_record)
+			}
 
 			nonerrorSmCount += len(*sm_records)
 			if len(*sm_records) == 0 {
@@ -56,7 +76,16 @@ func main() {
 				}
 
 				if old_sm_record != sm_record {
-					experimentManagerConnector.NotifyStateChange(&sm_record, &old_sm_record, infrastructure)
+
+					if _, err := utils.RepetitiveCaller(
+						func() (interface{}, error) {
+							return nil, experimentManagerConnector.NotifyStateChange(&sm_record, &old_sm_record, infrastructure)
+						},
+						nil,
+						"NotifyStateChange",
+					); err != nil {
+						log.Fatal("Unable to update simulation manager record")
+					}
 				}
 			}
 			log.Printf("Ending " + infrastructure + " loop\n\n\n")

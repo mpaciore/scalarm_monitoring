@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"scalarm_monitoring_daemon/utils"
 	"strconv"
 	"strings"
 )
@@ -23,7 +22,7 @@ type ExperimentManagerConnector struct {
 	scheme                   string
 }
 
-func CreateExperimentManagerConnector(login, password, certificatePath, scheme string) *ExperimentManagerConnector {
+func NewExperimentManagerConnector(login, password, certificatePath, scheme string) *ExperimentManagerConnector {
 	var client *http.Client
 	if certificatePath != "" {
 		CA_Pool := x509.NewCertPool()
@@ -35,7 +34,9 @@ func CreateExperimentManagerConnector(login, password, certificatePath, scheme s
 
 		client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: CA_Pool}}}
 	} else {
-		client = &http.Client{}
+		//SHIIIIIIIIIIIIIIT THIS IS SO LAME DELETE IT
+		client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+		//client = &http.Client{}
 	}
 
 	return &ExperimentManagerConnector{login: login, password: password, client: client, scheme: scheme}
@@ -45,16 +46,22 @@ func (emc *ExperimentManagerConnector) GetExperimentManagerLocation(informationS
 	log.Printf("GetExperimentManagerLocation")
 
 	resp, err := emc.client.Get(emc.scheme + "://" + informationServiceAddress + "/experiment_managers")
-	utils.Check(err)
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	utils.Check(err)
+	if err != nil {
+		return err
+	}
 
 	log.Printf(string(body))
 	var experimentManagerAddresses []string
 	err = json.Unmarshal(body, &experimentManagerAddresses)
-	utils.Check(err)
+	if err != nil {
+		return err
+	}
 
 	emc.experimentManagerAddress = experimentManagerAddresses[0] //TODO random
 	log.Printf("\texp_man_address: " + emc.experimentManagerAddress)
@@ -68,19 +75,27 @@ func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructur
 
 	url := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers?infrastructure=" + infrastructure
 	request, err := http.NewRequest("GET", url, nil)
-	utils.Check(err)
+	if err != nil {
+		return nil, err
+	}
 	request.SetBasicAuth(emc.login, emc.password)
 
 	resp, err := emc.client.Do(request)
-	utils.Check(err)
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	utils.Check(err)
+	if err != nil {
+		return nil, err
+	}
 
 	var getSimulationManagerRecordsRespond GetSimulationManagerRecordsRespond // maybe better name
 	err = json.Unmarshal(body, &getSimulationManagerRecordsRespond)
-	utils.Check(err)
+	if err != nil {
+		return nil, err
+	}
 	if getSimulationManagerRecordsRespond.Status != "ok" {
 		return nil, errors.New("Damaged data")
 	}
@@ -94,18 +109,26 @@ func (emc *ExperimentManagerConnector) GetSimulationManagerCode(sm_record *Sm_re
 
 	url := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers/" + sm_record.Id + "/code" + "?infrastructure=" + infrastructure
 	request, err := http.NewRequest("GET", url, nil)
-	utils.Check(err)
+	if err != nil {
+		return err
+	}
 	request.SetBasicAuth(emc.login, emc.password)
 
 	resp, err := emc.client.Do(request)
-	utils.Check(err)
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	utils.Check(err)
+	if err != nil {
+		return err
+	}
 
 	err = ioutil.WriteFile("sources_"+sm_record.Id+".zip", body, 0600)
-	utils.Check(err)
+	if err != nil {
+		return err
+	}
 
 	log.Printf("GetSimulationManagerCode: OK")
 	return nil
@@ -156,23 +179,29 @@ func (emc *ExperimentManagerConnector) NotifyStateChange(sm_record, old_sm_recor
 	log.Printf("NotifyStateChange")
 
 	//sm_json, err := json.Marshal(sm_record)
-	//utils.Check(err)
+	//if err != nil {
+	//	return err
+	//}
 	//log.Printf(string(sm_json))
 	//data := url.Values{"parameters": {string(sm_json)}, "infrastructure": {infrastructure}}
 
 	//----
 	data := url.Values{"parameters": {sm_record_marshal(sm_record, old_sm_record)}, "infrastructure": {infrastructure}}
-	//-----
+	//----
 
 	_url := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers/" + sm_record.Id //+ "?infrastructure=" + infrastructure
 
 	request, err := http.NewRequest("PUT", _url, strings.NewReader(data.Encode()))
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	utils.Check(err)
+	if err != nil {
+		return err
+	}
 	request.SetBasicAuth(emc.login, emc.password)
 
 	resp, err := emc.client.Do(request)
-	utils.Check(err)
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
 
 	log.Printf("Status code: " + strconv.Itoa(resp.StatusCode))
@@ -194,15 +223,21 @@ func (emc *ExperimentManagerConnector) SimulationManagerCommand(command string, 
 
 	request, err := http.NewRequest("POST", _url, strings.NewReader(data.Encode()))
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	utils.Check(err)
+	if err != nil {
+		return err
+	}
 	request.SetBasicAuth(emc.login, emc.password)
 
 	resp, err := emc.client.Do(request)
-	utils.Check(err)
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	utils.Check(err)
+	if err != nil {
+		return err
+	}
 	log.Printf(string(body))
 
 	log.Printf("SimulationManagerCommand: OK")

@@ -41,6 +41,8 @@ The config folder contains single file config.json that contains required inform
 * InformationServiceAddress - address of working Information Service
 * Login, Password - Scalarm credentials
 * Infrastructures - list of infrastructures monitor has to check for records
+* ScalarmCertificatePath - path to custom certificate (optional, by default looking in standard certificate directory)
+* ScalarmScheme - http or https (default)
 
 Example config:
 

@@ -5,10 +5,11 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"scalarm_monitoring_daemon/model"
-	"scalarm_monitoring_daemon/utils"
+	"log"
 	"os"
 	"os/exec"
+	"scalarm_monitoring_daemon/model"
+	"scalarm_monitoring_daemon/utils"
 )
 
 type PrivateMachineFacade struct{}
@@ -102,8 +103,16 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
 				if resource_status == "available" {
-					err = experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
-					utils.Check(err)
+
+					if _, err := utils.RepetitiveCaller(
+						func() (interface{}, error) {
+							return nil, experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
+						},
+						nil,
+						"GetSimulationManagerCode",
+					); err != nil {
+						log.Fatal("Unable to get simulation manager code")
+					}
 
 					//extract first zip
 					utils.Extract("sources_"+sm_record.Id+".zip", ".")
@@ -175,8 +184,16 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 				resource_status, err := this.resourceStatus(sm_record.Res_id)
 				utils.Check(err)
 				if resource_status == "released" {
-					err := experimentManagerConnector.SimulationManagerCommand("destroy_record", sm_record, "private_machine")
-					utils.Check(err)
+
+					if _, err := utils.RepetitiveCaller(
+						func() (interface{}, error) {
+							return nil, experimentManagerConnector.SimulationManagerCommand("destroy_record", sm_record, "private_machine")
+						},
+						nil,
+						"SimulationManagerCommand",
+					); err != nil {
+						log.Fatal("Unable to send command to simulation manager")
+					}
 				}
 			}
 		}
