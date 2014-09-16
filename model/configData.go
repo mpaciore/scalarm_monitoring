@@ -13,6 +13,8 @@ type ConfigData struct {
 	Login                     string
 	Password                  string
 	Infrastructures           []string
+	ScalarmCertificatePath    string
+	ScalarmScheme             string
 }
 
 func ReadConfiguration() (*ConfigData, error) {
@@ -24,6 +26,10 @@ func ReadConfiguration() (*ConfigData, error) {
 	var configData ConfigData
 	err = json.Unmarshal(data, &configData)
 	utils.Check(err)
+
+	if configData.ScalarmScheme == "" {
+		configData.ScalarmScheme = "https"
+	}
 
 	log.Printf("\tinformation service address: " + configData.InformationServiceAddress)
 	log.Printf("\tlogin:                       " + configData.Login)
