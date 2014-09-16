@@ -38,11 +38,9 @@ Config
 -------- 
 The config folder contains single file config.json that contains required informations for monitor:
 
-InformationServiceAddress - address of working Information Service
-
-Login, Password - Scalarm credentials
-
-Infrastructures - list of infrastructures monitor has to check for records
+* InformationServiceAddress - address of working Information Service
+* Login, Password - Scalarm credentials
+* Infrastructures - list of infrastructures monitor has to check for records
 
 Example config:
 
