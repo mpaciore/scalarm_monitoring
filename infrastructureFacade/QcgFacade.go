@@ -208,7 +208,7 @@ func (qf QcgFacade) HandleSM(sm_record *model.Sm_record, emc *model.ExperimentMa
 		output, err := exec.Command("bash", "-c", sm_record.Cmd_to_execute).CombinedOutput()
 		utils.Check(err)
 		utils.Check(err)
-		sm_record.Error_log = strings.Replace(strings.Replace(strings.Replace(strings.Replace(string(output[:]), "\t", "\\t", -1), `"`, `\"`, -1), `'`, `\'`, -1), "\n", "\\n", -1)
+		sm_record.Error_log = string(output[:])
 	}
 
 	sm_record.Cmd_to_execute = ""
