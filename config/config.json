@@ -7,6 +7,6 @@
 		"qsub",
 		"qcg"
 	],
-	"ScalarmCertificatePath" : "cert.pem",
+	"ScalarmCertificatePath" : "",
 	"ScalarmScheme" : "https"
 }

@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"scalarm_monitoring_daemon/utils"
+	"scalarm_monitoring/utils"
 )
 
 type ConfigData struct {
@@ -27,8 +27,10 @@ func ReadConfiguration() (*ConfigData, error) {
 	err = json.Unmarshal(data, &configData)
 	utils.Check(err)
 
-	if configData.ScalarmCertificatePath[0] == '~' {
-		configData.ScalarmCertificatePath = os.Getenv("HOME") + configData.ScalarmCertificatePath[1:]
+	if configData.ScalarmCertificatePath != "" {
+		if configData.ScalarmCertificatePath[0] == '~' {
+			configData.ScalarmCertificatePath = os.Getenv("HOME") + configData.ScalarmCertificatePath[1:]
+		}
 	}
 
 	if configData.ScalarmScheme == "" {
@@ -44,4 +46,20 @@ func ReadConfiguration() (*ConfigData, error) {
 
 	log.Printf("readConfiguration: OK")
 	return &configData, nil
+}
+
+func innerAppendIfMissing(currentInfrastructures []string, newInfrastructure string) []string {
+	for _, c := range currentInfrastructures {
+		if c == newInfrastructure {
+			return currentInfrastructures
+		}
+	}
+	return append(currentInfrastructures, newInfrastructure)
+}
+
+func AppendIfMissing(currentInfrastructures []string, newInfrastructures []string) []string {
+	for _, n := range newInfrastructures {
+		currentInfrastructures = innerAppendIfMissing(currentInfrastructures, n)
+	}
+	return currentInfrastructures
 }

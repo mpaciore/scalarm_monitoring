@@ -17,6 +17,7 @@ func RegisterWorking() {
 		output, _ := exec.Command("bash", "-c", "ps -p "+string(pid[:])+" | tail -n +2").CombinedOutput()
 		if strings.Contains(string(output[:]), "scalarm") {
 			log.Printf("...and process with saved pid [%s] is working:\n%v", string(pid[:]), string(output[:]))
+			exec.Command("bash", "-c", "kill -USR1 "+string(pid[:])).Run()
 			log.Fatal("Monitoring already working")
 		}
 		log.Printf("...but no process with saved pid [%s] is working", string(pid[:]))

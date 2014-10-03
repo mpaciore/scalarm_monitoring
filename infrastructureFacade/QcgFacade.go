@@ -4,8 +4,8 @@ import (
 	"errors"
 	"log"
 	"os/exec"
-	"scalarm_monitoring_daemon/model"
-	"scalarm_monitoring_daemon/utils"
+	"scalarm_monitoring/model"
+	"scalarm_monitoring/utils"
 	"strings"
 )
 

@@ -2,9 +2,9 @@ package main
 
 import (
 	"log"
-	"scalarm_monitoring_daemon/infrastructureFacade"
-	"scalarm_monitoring_daemon/model"
-	"scalarm_monitoring_daemon/utils"
+	"scalarm_monitoring/infrastructureFacade"
+	"scalarm_monitoring/model"
+	"scalarm_monitoring/utils"
 	"time"
 )
 
@@ -15,9 +15,9 @@ func main() {
 	defer utils.UnregisterWorking()
 
 	//listen for signals
-	/*infrastructuresChannel := make(chan []string, 10)
+	infrastructuresChannel := make(chan []string, 10)
 	errorChannel := make(chan error, 1)
-	go model.SignalHandler(infrastructuresChannel, errorChannel)*/
+	go model.SignalCatcher(infrastructuresChannel, errorChannel)
 
 	//read configuration
 	configData, err := model.ReadConfiguration()
@@ -50,7 +50,8 @@ func main() {
 		log.Printf("Starting main loop\n\n\n")
 
 		//check for config changes
-		//select, nonblocking channel check?
+		configData.Infrastructures = model.AppendIfMissing(configData.Infrastructures, model.SignalHandler(infrastructuresChannel, errorChannel))
+		log.Printf("Current infrastructures: %v", configData.Infrastructures)
 
 		nonerrorSmCount = 0
 
@@ -107,9 +108,9 @@ func main() {
 		}
 
 		log.Printf("Ending main loop\n\n\n\n\n")
-		if nonerrorSmCount == 0 { //TODO nothing running on infrastructure
+		/*if nonerrorSmCount == 0 { //TODO nothing running on infrastructure
 			break
-		}
+		}*/
 
 		time.Sleep(10 * time.Second)
 	}

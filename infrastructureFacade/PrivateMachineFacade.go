@@ -8,8 +8,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"scalarm_monitoring_daemon/model"
-	"scalarm_monitoring_daemon/utils"
+	"scalarm_monitoring/model"
+	"scalarm_monitoring/utils"
 )
 
 type PrivateMachineFacade struct{}

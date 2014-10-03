@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"scalarm_monitoring/utils"
 	"strconv"
 	"strings"
 )
@@ -91,7 +92,7 @@ func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructur
 		return nil, err
 	}
 
-	var getSimulationManagerRecordsRespond GetSimulationManagerRecordsRespond // maybe better name
+	var getSimulationManagerRecordsRespond GetSimulationManagerRecordsRespond
 	err = json.Unmarshal(body, &getSimulationManagerRecordsRespond)
 	if err != nil {
 		return nil, err
@@ -139,7 +140,7 @@ func inner_sm_record_marshal(current, old, name string, comma *bool, parameters 
 		if *comma {
 			parameters.WriteString(",")
 		}
-		parameters.WriteString("\"" + name + "\":\"" + current + "\"")
+		parameters.WriteString("\"" + name + "\":\"" + utils.Escape(current) + "\"")
 		*comma = true
 	}
 }
