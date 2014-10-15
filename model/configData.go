@@ -3,9 +3,7 @@ package model
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
-	"scalarm_monitoring_daemon/utils"
-	//"errors"
+	"os"
 )
 
 type ConfigData struct {
@@ -17,25 +15,43 @@ type ConfigData struct {
 	ScalarmScheme             string
 }
 
-func ReadConfiguration() (*ConfigData, error) {
-	log.Printf("readConfiguration")
-
-	data, err := ioutil.ReadFile("config.json")
-	utils.Check(err)
+func ReadConfiguration(configFile string) (*ConfigData, error) {
+	data, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return nil, err
+	}
 
 	var configData ConfigData
 	err = json.Unmarshal(data, &configData)
-	utils.Check(err)
+	if err != nil {
+		return nil, err
+	}
+
+	if configData.ScalarmCertificatePath != "" {
+		if configData.ScalarmCertificatePath[0] == '~' {
+			configData.ScalarmCertificatePath = os.Getenv("HOME") + configData.ScalarmCertificatePath[1:]
+		}
+	}
 
 	if configData.ScalarmScheme == "" {
 		configData.ScalarmScheme = "https"
 	}
 
-	log.Printf("\tinformation service address: " + configData.InformationServiceAddress)
-	log.Printf("\tlogin:                       " + configData.Login)
-	log.Printf("\tpassword:                    " + configData.Password)
-	log.Printf("\tinfrastructures:             %v", configData.Infrastructures)
-
-	log.Printf("readConfiguration: OK")
 	return &configData, nil
+}
+
+func innerAppendIfMissing(currentInfrastructures []string, newInfrastructure string) []string {
+	for _, c := range currentInfrastructures {
+		if c == newInfrastructure {
+			return currentInfrastructures
+		}
+	}
+	return append(currentInfrastructures, newInfrastructure)
+}
+
+func AppendIfMissing(currentInfrastructures []string, newInfrastructures []string) []string {
+	for _, n := range newInfrastructures {
+		currentInfrastructures = innerAppendIfMissing(currentInfrastructures, n)
+	}
+	return currentInfrastructures
 }

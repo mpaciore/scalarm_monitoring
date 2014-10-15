@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"scalarm_monitoring_daemon/model"
-	"scalarm_monitoring_daemon/utils"
+	"scalarm_monitoring/model"
+	"scalarm_monitoring/utils"
 	"strings"
 )
 
@@ -178,8 +178,16 @@ func (this QsubFacade) HandleSM(sm_record *model.Sm_record, experimentManagerCon
 
 	if sm_record.Cmd_to_execute_code == "prepare_resource" {
 		if resource_status == "available" {
-			err = experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
-			utils.Check(err)
+
+			if _, err := utils.RepetitiveCaller(
+				func() (interface{}, error) {
+					return nil, experimentManagerConnector.GetSimulationManagerCode(sm_record, infrastructure)
+				},
+				nil,
+				"GetSimulationManagerCode",
+			); err != nil {
+				log.Fatal("Unable to get simulation manager code")
+			}
 
 			//extract first zip
 			utils.Extract("sources_"+sm_record.Id+".zip", ".")
