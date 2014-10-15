@@ -40,7 +40,6 @@ func main() {
 	log.Printf("\tScalarm scheme:              %v", configData.ScalarmScheme)
 
 	//create EM connector
-	infrastructures := configData.Infrastructures
 	experimentManagerConnector := model.NewExperimentManagerConnector(configData.Login, configData.Password,
 		configData.ScalarmCertificatePath, configData.ScalarmScheme)
 
@@ -67,12 +66,12 @@ func main() {
 
 		//check for config changes
 		configData.Infrastructures = model.AppendIfMissing(configData.Infrastructures, model.SignalHandler(infrastructuresChannel, errorChannel))
-		log.Printf("Current infrastructures: %v", configData.Infrastructures)
+		log.Printf("Current infrastructures: %v\n\n\n", configData.Infrastructures)
 
 		nonerrorSmCount = 0
 
 		//infrastructures loop
-		for _, infrastructure := range infrastructures {
+		for _, infrastructure := range configData.Infrastructures {
 			log.Printf("Starting " + infrastructure + " infrastructure loop")
 
 			var sm_records *[]model.Sm_record

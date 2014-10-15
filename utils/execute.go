@@ -9,6 +9,7 @@ import (
 
 func Execute(command string) (string, error) {
 	log.Printf("Executing: " + command)
+
 	cmd := []byte("#!/bin/bash\n" + command + "\n")
 	ioutil.WriteFile("./s.sh", cmd, 0755)
 	output, err := exec.Command("./s.sh").CombinedOutput()
