@@ -8,7 +8,7 @@ import (
 
 func RepetitiveCaller(f func() (interface{}, error), intervals []int, functionName string) (out interface{}, err error) {
 	if intervals == nil {
-		intervals = []int{15, 30, 60, 120, 240}
+		intervals = []int{15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15}
 	}
 
 	intervals = append(intervals, -1)

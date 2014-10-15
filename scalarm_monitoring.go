@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 	"scalarm_monitoring/infrastructureFacade"
 	"scalarm_monitoring/model"
 	"scalarm_monitoring/utils"
@@ -10,6 +11,14 @@ import (
 
 func main() {
 
+	//set config file name
+	var configFile string
+	if len(os.Args) == 2 {
+		configFile = os.Args[1]
+	} else {
+		configFile = "config.json"
+	}
+
 	//register working
 	utils.RegisterWorking()
 	defer utils.UnregisterWorking()
@@ -17,11 +26,18 @@ func main() {
 	//listen for signals
 	infrastructuresChannel := make(chan []string, 10)
 	errorChannel := make(chan error, 1)
-	go model.SignalCatcher(infrastructuresChannel, errorChannel)
+	go model.SignalCatcher(infrastructuresChannel, errorChannel, configFile)
 
 	//read configuration
-	configData, err := model.ReadConfiguration()
+	configData, err := model.ReadConfiguration(configFile)
 	utils.Check(err)
+
+	log.Printf("\tInformation Service address: %v", configData.InformationServiceAddress)
+	log.Printf("\tlogin:                       %v", configData.Login)
+	log.Printf("\tpassword:                    %v", configData.Password)
+	log.Printf("\tinfrastructures:             %v", configData.Infrastructures)
+	log.Printf("\tScalarm certificate path:    %v", configData.ScalarmCertificatePath)
+	log.Printf("\tScalarm scheme:              %v", configData.ScalarmScheme)
 
 	//create EM connector
 	infrastructures := configData.Infrastructures
@@ -36,7 +52,7 @@ func main() {
 		nil,
 		"GetExperimentManagerLocation",
 	); err != nil {
-		log.Fatal("Unable to get experiment manager location")
+		log.Fatal("Fatal: Unable to get experiment manager location")
 	}
 
 	//create infrastructure facades
@@ -69,7 +85,7 @@ func main() {
 				nil,
 				"GetSimulationManagerRecords",
 			); err != nil {
-				log.Fatal("Unable to get simulation manager records")
+				log.Fatal("Fatal: Unable to get simulation manager records for " + infrastructure)
 			} else {
 				sm_records = raw_sm_records.(*[]model.Sm_record)
 			}
@@ -100,7 +116,7 @@ func main() {
 						nil,
 						"NotifyStateChange",
 					); err != nil {
-						log.Fatal("Unable to update simulation manager record")
+						log.Fatal("Fatal: Unable to update simulation manager record")
 					}
 				}
 			}
@@ -108,9 +124,9 @@ func main() {
 		}
 
 		log.Printf("Ending main loop\n\n\n\n\n")
-		/*if nonerrorSmCount == 0 { //TODO nothing running on infrastructure
+		if nonerrorSmCount == 0 { //TODO nothing running on infrastructure
 			break
-		}*/
+		}
 
 		time.Sleep(10 * time.Second)
 	}

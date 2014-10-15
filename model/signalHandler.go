@@ -7,13 +7,13 @@ import (
 	"syscall"
 )
 
-func SignalCatcher(infrastructuresChannel chan []string, errorChannel chan error) {
+func SignalCatcher(infrastructuresChannel chan []string, errorChannel chan error, configFile string) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGUSR1)
 
 	for {
 		<-c
-		newConfig, err := ReadConfiguration()
+		newConfig, err := ReadConfiguration(configFile)
 		if err != nil {
 			errorChannel <- err
 		}
@@ -26,7 +26,7 @@ func SignalHandler(infrastructuresChannel chan []string, errorChannel chan error
 	select {
 	case err, ok := <-errorChannel:
 		if ok {
-			log.Fatal(err.Error())
+			log.Printf("An error occured: " + err.Error())
 		} else {
 			log.Fatal("Channel closed!")
 		}

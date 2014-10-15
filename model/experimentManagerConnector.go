@@ -3,7 +3,6 @@ package model
 import (
 	"bytes"
 	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -24,7 +23,7 @@ type ExperimentManagerConnector struct {
 }
 
 func NewExperimentManagerConnector(login, password, certificatePath, scheme string) *ExperimentManagerConnector {
-	var client *http.Client
+	/*var client *http.Client
 	if certificatePath != "" {
 		CA_Pool := x509.NewCertPool()
 		severCert, err := ioutil.ReadFile(certificatePath)
@@ -35,10 +34,10 @@ func NewExperimentManagerConnector(login, password, certificatePath, scheme stri
 
 		client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: CA_Pool}}}
 	} else {
-		//SHIIIIIIIIIIIIIIT THIS IS SO LAME DELETE IT
 		client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
-		//client = &http.Client{}
-	}
+		//client = &http.Client{} //safer option
+	}*/
+	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 
 	return &ExperimentManagerConnector{login: login, password: password, client: client, scheme: scheme}
 }

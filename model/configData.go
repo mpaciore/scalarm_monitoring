@@ -3,9 +3,7 @@ package model
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"os"
-	"scalarm_monitoring/utils"
 )
 
 type ConfigData struct {
@@ -17,15 +15,17 @@ type ConfigData struct {
 	ScalarmScheme             string
 }
 
-func ReadConfiguration() (*ConfigData, error) {
-	log.Printf("readConfiguration")
-
-	data, err := ioutil.ReadFile("config.json")
-	utils.Check(err)
+func ReadConfiguration(configFile string) (*ConfigData, error) {
+	data, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return nil, err
+	}
 
 	var configData ConfigData
 	err = json.Unmarshal(data, &configData)
-	utils.Check(err)
+	if err != nil {
+		return nil, err
+	}
 
 	if configData.ScalarmCertificatePath != "" {
 		if configData.ScalarmCertificatePath[0] == '~' {
@@ -37,14 +37,6 @@ func ReadConfiguration() (*ConfigData, error) {
 		configData.ScalarmScheme = "https"
 	}
 
-	log.Printf("\tInformation Service address: %v", configData.InformationServiceAddress)
-	log.Printf("\tlogin:                       %v", configData.Login)
-	log.Printf("\tpassword:                    %v", configData.Password)
-	log.Printf("\tinfrastructures:             %v", configData.Infrastructures)
-	log.Printf("\tScalarm certificate path:    %v", configData.ScalarmCertificatePath)
-	log.Printf("\tScalarm scheme:              %v", configData.ScalarmScheme)
-
-	log.Printf("readConfiguration: OK")
 	return &configData, nil
 }
 
