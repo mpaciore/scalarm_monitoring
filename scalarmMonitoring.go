@@ -30,8 +30,11 @@ func main() {
 
 	//read configuration
 	configData, err := model.ReadConfiguration(configFile)
-	utils.Check(err)
+	if err != nil {
+		log.Fatal("Could not read configuration file")
+	}
 
+	log.Printf("Config loaded")
 	log.Printf("\tInformation Service address: %v", configData.InformationServiceAddress)
 	log.Printf("\tlogin:                       %v", configData.Login)
 	log.Printf("\tpassword:                    %v", configData.Password)
@@ -58,7 +61,9 @@ func main() {
 	infrastructureFacades := infrastructureFacade.NewInfrastructureFacades()
 
 	var old_sm_record model.Sm_record
+	var sm_records []model.Sm_record
 	var nonerrorSmCount int
+
 	log.Printf("Configuration finished\n\n\n\n\n")
 
 	for {
@@ -74,8 +79,6 @@ func main() {
 		for _, infrastructure := range configData.Infrastructures {
 			log.Printf("Starting " + infrastructure + " infrastructure loop")
 
-			var sm_records *[]model.Sm_record
-
 			//get sm_records
 			if raw_sm_records, err := utils.RepetitiveCaller(
 				func() (interface{}, error) {
@@ -86,16 +89,16 @@ func main() {
 			); err != nil {
 				log.Fatal("Fatal: Unable to get simulation manager records for " + infrastructure)
 			} else {
-				sm_records = raw_sm_records.(*[]model.Sm_record)
+				sm_records = raw_sm_records.([]model.Sm_record)
 			}
 
-			nonerrorSmCount += len(*sm_records)
-			if len(*sm_records) == 0 {
+			nonerrorSmCount += len(sm_records)
+			if len(sm_records) == 0 {
 				log.Printf("No sm_records")
 			}
 
 			//sm_records loop
-			for _, sm_record := range *sm_records {
+			for _, sm_record := range sm_records {
 				old_sm_record = sm_record
 
 				log.Printf("Starting sm_record handle function")

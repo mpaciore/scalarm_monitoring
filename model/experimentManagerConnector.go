@@ -22,6 +22,11 @@ type ExperimentManagerConnector struct {
 	scheme                   string
 }
 
+type GetSimulationManagerRecordsRespond struct {
+	Status     string
+	Sm_records []Sm_record
+}
+
 func NewExperimentManagerConnector(login, password, certificatePath, scheme string) *ExperimentManagerConnector {
 	/*var client *http.Client
 	if certificatePath != "" {
@@ -37,6 +42,8 @@ func NewExperimentManagerConnector(login, password, certificatePath, scheme stri
 		client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 		//client = &http.Client{} //safer option
 	}*/
+
+	// #justscalarmthings
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 
 	return &ExperimentManagerConnector{login: login, password: password, client: client, scheme: scheme}
@@ -70,7 +77,7 @@ func (emc *ExperimentManagerConnector) GetExperimentManagerLocation(informationS
 	return nil
 }
 
-func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructure string) (*[]Sm_record, error) {
+func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructure string) ([]Sm_record, error) {
 	log.Printf("GetSimulationManagerRecords")
 
 	url := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers?infrastructure=" + infrastructure
@@ -101,7 +108,7 @@ func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructur
 	}
 
 	log.Printf("GetSimulationManagerRecords: OK")
-	return &getSimulationManagerRecordsRespond.Sm_records, nil
+	return getSimulationManagerRecordsRespond.Sm_records, nil
 }
 
 func (emc *ExperimentManagerConnector) GetSimulationManagerCode(sm_record *Sm_record, infrastructure string) error {

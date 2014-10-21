@@ -30,11 +30,11 @@ func (this PrivateMachineFacade) prepareResource(command string, path string) st
 		}
 	}
 
-	data, err := ioutil.ReadFile(path + "/txt")
+	data, _ := ioutil.ReadFile(path + "/txt")
 	os.Remove("s.sh")
 	os.Remove(path + "/txt")
 
-	utils.Check(err)
+	//utils.Check(err)
 	return string(data[:])
 }
 
@@ -56,16 +56,16 @@ func (this PrivateMachineFacade) resourceStatus(pid string) (string, error) {
 	var output bytes.Buffer
 	command2.Stdout = &output
 
-	err := command1.Start()
-	utils.Check(err)
-	err = command2.Start()
-	utils.Check(err)
-	err = command1.Wait()
-	utils.Check(err)
-	err = pipeOutput.Close()
-	utils.Check(err)
-	err = command2.Wait()
-	utils.Check(err)
+	_ = command1.Start()
+	//utils.Check(err)
+	_ = command2.Start()
+	//utils.Check(err)
+	_ = command1.Wait()
+	//utils.Check(err)
+	_ = pipeOutput.Close()
+	//utils.Check(err)
+	_ = command2.Wait()
+	//utils.Check(err)
 
 	if output.String() == "" {
 		return "released", nil
@@ -100,8 +100,8 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 				sm_record.Cmd_to_execute = ""
 				sm_record.State = "terminating"
 			} else if sm_record.Cmd_to_execute == "prepare_resource" {
-				resource_status, err := this.resourceStatus(sm_record.Res_id)
-				utils.Check(err)
+				resource_status, _ := this.resourceStatus(sm_record.Res_id)
+				//utils.Check(err)
 				if resource_status == "available" {
 
 					if _, err := utils.RepetitiveCaller(
@@ -117,15 +117,16 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 					//extract first zip
 					utils.Extract("sources_"+sm_record.Id+".zip", ".")
 					//move second zip one directory up
-					err := exec.Command("bash", "-c", "mv scalarm_simulation_manager_code_"+sm_record.Sm_uuid+"/* .").Run()
-					utils.Check(err)
+					_ = exec.Command("bash", "-c", "mv scalarm_simulation_manager_code_"+sm_record.Sm_uuid+"/* .").Run()
+					//utils.Check(err)
 					//extract second zip
 					utils.Extract("scalarm_simulation_manager_"+sm_record.Sm_uuid+".zip", ".")
 					//remove both zips and catalog left from first unzip
-					err = exec.Command("bash", "-c", "rm -rf  sources_"+sm_record.Id+".zip"+
+					_ = exec.Command("bash", "-c", "rm -rf  sources_"+sm_record.Id+".zip"+
 						" scalarm_simulation_manager_code_"+sm_record.Sm_uuid+
 						" scalarm_simulation_manager_"+sm_record.Sm_uuid+".zip").Run()
-					utils.Check(err)
+					//utils.Check(err)
+
 					//run command
 					pid := this.prepareResource(sm_record.Cmd_to_execute_code, "scalarm_simulation_manager_"+sm_record.Sm_uuid)
 					sm_record.Pid = pid
@@ -149,8 +150,8 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 				sm_record.Cmd_to_execute = ""
 				sm_record.State = "initializing"
 			} else {
-				resource_status, err := this.resourceStatus(sm_record.Res_id)
-				utils.Check(err)
+				resource_status, _ := this.resourceStatus(sm_record.Res_id)
+				//utils.Check(err)
 				if resource_status == "running_sm" {
 					sm_record.State = "running"
 				}
@@ -165,8 +166,8 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 				sm_record.Cmd_to_execute = ""
 				sm_record.State = "terminating"
 			} else {
-				resource_status, err := this.resourceStatus(sm_record.Res_id)
-				utils.Check(err)
+				resource_status, _ := this.resourceStatus(sm_record.Res_id)
+				//utils.Check(err)
 				if resource_status != "running_sm" {
 					sm_record.State = "error"
 				}
@@ -181,8 +182,8 @@ func (this PrivateMachineFacade) HandleSM(sm_record *model.Sm_record, experiment
 				sm_record.Cmd_to_execute = ""
 				sm_record.State = "terminating"
 			} else {
-				resource_status, err := this.resourceStatus(sm_record.Res_id)
-				utils.Check(err)
+				resource_status, _ := this.resourceStatus(sm_record.Res_id)
+				//utils.Check(err)
 				if resource_status == "released" {
 
 					if _, err := utils.RepetitiveCaller(

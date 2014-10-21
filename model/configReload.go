@@ -26,7 +26,7 @@ func SignalHandler(infrastructuresChannel chan []string, errorChannel chan error
 	select {
 	case err, ok := <-errorChannel:
 		if ok {
-			log.Printf("An error occured: " + err.Error())
+			log.Printf("An error occured while reloading config: " + err.Error())
 		} else {
 			log.Fatal("Channel closed!")
 		}
@@ -37,13 +37,13 @@ func SignalHandler(infrastructuresChannel chan []string, errorChannel chan error
 	select {
 	case addedInfrastructures, ok := <-infrastructuresChannel:
 		if ok {
-			log.Printf("Infrastructures found in config: %v", addedInfrastructures)
+			log.Printf("Config reload requested, infrastructures found: %v", addedInfrastructures)
 			return addedInfrastructures
 		} else {
 			log.Fatal("Channel closed!")
 		}
 	default:
-		log.Printf("No config changes, moving on.")
+		log.Printf("Config reload not requested")
 	}
 
 	return nil

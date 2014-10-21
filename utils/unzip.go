@@ -2,37 +2,56 @@ package utils
 
 import (
 	"archive/zip"
-	"os"
 	"io"
+	"os"
 	"path/filepath"
 )
 
-func cloneZipItem(f *zip.File, dest string){
-	//Create full directory path
+func cloneZipItem(f *zip.File, dest string) error {
+	//create full directory path
 	path := filepath.Join(dest, f.Name)
-	//fmt.Println("Creating", path)  change to log
+
 	err := os.MkdirAll(filepath.Dir(path), os.ModeDir|os.ModePerm)
-	Check(err)
-	
-	//Clone if item is a file
+	if err != nil {
+		return err
+	}
+
+	//clone if item is a file
 	rc, err := f.Open()
-	Check(err)
-	if !f.FileInfo().IsDir() {	
-		//Use os.Create() since Zip doesn't store file permissions.
+	if err != nil {
+		return err
+	}
+
+	if !f.FileInfo().IsDir() {
+
 		fileCopy, err := os.Create(path)
-		Check(err)
+		if err != nil {
+			return err
+		}
+
 		_, err = io.Copy(fileCopy, rc)
 		fileCopy.Close()
-		Check(err)
+		if err != nil {
+			return err
+		}
 	}
 	rc.Close()
+	return nil
 }
 
-func Extract(zip_path, dest string) {
+func Extract(zip_path, dest string) error {
 	r, err := zip.OpenReader(zip_path)
-	Check(err)
-	defer r.Close()
-	for _, f := range r.File {
-		cloneZipItem(f, dest)
+	if err != nil {
+		return err
 	}
+	defer r.Close()
+
+	for _, f := range r.File {
+		err = cloneZipItem(f, dest)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
