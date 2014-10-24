@@ -19,7 +19,8 @@ func (qf QsubFacade) prepareResource(command string) (string, error) {
 		return "", fmt.Errorf(stringOutput)
 	}
 
-	jobID := strings.TrimSpace(stringOutput)
+	split := strings.Split(stringOutput, "\n")
+	jobID := strings.TrimSpace(split[len(split)-1])
 	return jobID, nil
 }
 
@@ -32,7 +33,8 @@ func (qf QsubFacade) restart(command string) (string, error) {
 		return "", fmt.Errorf(stringOutput)
 	}
 
-	jobID := strings.TrimSpace(stringOutput)
+	split := strings.Split(stringOutput, "\n")
+	jobID := strings.TrimSpace(split[len(split)-1])
 	return jobID, nil
 }
 
