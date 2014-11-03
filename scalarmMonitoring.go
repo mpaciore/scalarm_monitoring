@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"os"
-	"scalarm_monitoring/infrastructureFacade"
+	"scalarm_monitoring/infrastructurefacade"
 	"scalarm_monitoring/model"
 	"scalarm_monitoring/utils"
 	"time"
@@ -20,16 +20,16 @@ func main() {
 	}
 
 	//register working
-	utils.RegisterWorking()
-	defer utils.UnregisterWorking()
+	RegisterWorking()
+	defer UnregisterWorking()
 
 	//listen for signals
 	infrastructuresChannel := make(chan []string, 10)
 	errorChannel := make(chan error, 1)
-	go model.SignalCatcher(infrastructuresChannel, errorChannel, configFile)
+	go SignalCatcher(infrastructuresChannel, errorChannel, configFile)
 
 	//read configuration
-	configData, err := model.ReadConfiguration(configFile)
+	configData, err := ReadConfiguration(configFile)
 	if err != nil {
 		log.Fatal("Could not read configuration file")
 	}
@@ -58,7 +58,7 @@ func main() {
 	}
 
 	//create infrastructure facades
-	infrastructureFacades := infrastructureFacade.NewInfrastructureFacades()
+	infrastructureFacades := infrastructurefacade.NewInfrastructureFacades()
 
 	var old_sm_record model.Sm_record
 	var sm_records []model.Sm_record
@@ -70,7 +70,7 @@ func main() {
 		log.Printf("Starting main loop\n\n\n")
 
 		//check for config changes
-		configData.Infrastructures = model.AppendIfMissing(configData.Infrastructures, model.SignalHandler(infrastructuresChannel, errorChannel))
+		configData.Infrastructures = AppendIfMissing(configData.Infrastructures, SignalHandler(infrastructuresChannel, errorChannel))
 		log.Printf("Current infrastructures: %v\n\n\n", configData.Infrastructures)
 
 		nonerrorSmCount = 0

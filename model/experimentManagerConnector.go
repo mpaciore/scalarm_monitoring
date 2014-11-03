@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"scalarm_monitoring/utils"
 	"strconv"
 	"strings"
 )
@@ -22,26 +21,21 @@ type ExperimentManagerConnector struct {
 	scheme                   string
 }
 
-type GetSimulationManagerRecordsRespond struct {
-	Status     string
-	Sm_records []Sm_record
-}
-
 func NewExperimentManagerConnector(login, password, certificatePath, scheme string) *ExperimentManagerConnector {
-	/*var client *http.Client
-	if certificatePath != "" {
-		CA_Pool := x509.NewCertPool()
-		severCert, err := ioutil.ReadFile(certificatePath)
-		if err != nil {
-			log.Fatal("An error occured: could not load Scalarm certificate")
-		}
-		CA_Pool.AppendCertsFromPEM(severCert)
+	// var client *http.Client
+	// if certificatePath != "" {
+	// 	CA_Pool := x509.NewCertPool()
+	// 	severCert, err := ioutil.ReadFile(certificatePath)
+	// 	if err != nil {
+	// 		log.Fatal("An error occured: could not load Scalarm certificate")
+	// 	}
+	// 	CA_Pool.AppendCertsFromPEM(severCert)
 
-		client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: CA_Pool}}}
-	} else {
-		client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
-		//client = &http.Client{} //safer option
-	}*/
+	// 	client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: CA_Pool}}}
+	// } else {
+	// 	client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+	// 	//client = &http.Client{} //safer option
+	// }
 
 	// #justscalarmthings
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
@@ -50,8 +44,6 @@ func NewExperimentManagerConnector(login, password, certificatePath, scheme stri
 }
 
 func (emc *ExperimentManagerConnector) GetExperimentManagerLocation(informationServiceAddress string) error {
-	log.Printf("GetExperimentManagerLocation")
-
 	resp, err := emc.client.Get(emc.scheme + "://" + informationServiceAddress + "/experiment_managers")
 	if err != nil {
 		return err
@@ -72,14 +64,10 @@ func (emc *ExperimentManagerConnector) GetExperimentManagerLocation(informationS
 
 	emc.experimentManagerAddress = experimentManagerAddresses[0] //TODO random
 	log.Printf("\texp_man_address: " + emc.experimentManagerAddress)
-
-	log.Printf("GetExperimentManagerLocation: OK")
 	return nil
 }
 
 func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructure string) ([]Sm_record, error) {
-	log.Printf("GetSimulationManagerRecords")
-
 	url := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers?infrastructure=" + infrastructure
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -98,23 +86,20 @@ func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructur
 		return nil, err
 	}
 
-	var getSimulationManagerRecordsRespond GetSimulationManagerRecordsRespond
-	err = json.Unmarshal(body, &getSimulationManagerRecordsRespond)
+	var response EMJsonResponse
+	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return nil, err
 	}
-	if getSimulationManagerRecordsRespond.Status != "ok" {
+	if response.Status != "ok" {
 		return nil, errors.New("Damaged data")
 	}
 
-	log.Printf("GetSimulationManagerRecords: OK")
-	return getSimulationManagerRecordsRespond.Sm_records, nil
+	return response.Sm_records, nil
 }
 
-func (emc *ExperimentManagerConnector) GetSimulationManagerCode(sm_record *Sm_record, infrastructure string) error {
-	log.Printf("GetSimulationManagerCode")
-
-	url := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers/" + sm_record.Id + "/code" + "?infrastructure=" + infrastructure
+func (emc *ExperimentManagerConnector) GetSimulationManagerCode(smRecordId string, infrastructure string) error {
+	url := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers/" + smRecordId + "/code" + "?infrastructure=" + infrastructure
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -132,12 +117,11 @@ func (emc *ExperimentManagerConnector) GetSimulationManagerCode(sm_record *Sm_re
 		return err
 	}
 
-	err = ioutil.WriteFile("sources_"+sm_record.Id+".zip", body, 0600)
+	err = ioutil.WriteFile("sources_"+smRecordId+".zip", body, 0600)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("GetSimulationManagerCode: OK")
 	return nil
 }
 
@@ -146,7 +130,7 @@ func inner_sm_record_marshal(current, old, name string, comma *bool, parameters 
 		if *comma {
 			parameters.WriteString(",")
 		}
-		parameters.WriteString("\"" + name + "\":\"" + utils.Escape(current) + "\"")
+		parameters.WriteString("\"" + name + "\":\"" + escape(current) + "\"")
 		*comma = true
 	}
 }
@@ -160,21 +144,19 @@ func sm_record_marshal(sm_record, old_sm_record *Sm_record) string {
 
 	inner_sm_record_marshal(sm_record.Resource_status, old_sm_record.Resource_status, "resource_status", &comma, &parameters)
 
-	inner_sm_record_marshal(sm_record.Res_id, old_sm_record.Res_id, "res_id", &comma, &parameters)
-
-	inner_sm_record_marshal(sm_record.Pid, old_sm_record.Pid, "pid", &comma, &parameters)
-
-	inner_sm_record_marshal(sm_record.Job_id, old_sm_record.Job_id, "job_id", &comma, &parameters)
-
-	inner_sm_record_marshal(sm_record.Vm_id, old_sm_record.Vm_id, "vm_id", &comma, &parameters)
-
 	inner_sm_record_marshal(sm_record.Cmd_to_execute, old_sm_record.Cmd_to_execute, "cmd_to_execute", &comma, &parameters)
 
 	inner_sm_record_marshal(sm_record.Cmd_to_execute_code, old_sm_record.Cmd_to_execute_code, "cmd_to_execute_code", &comma, &parameters)
 
-	inner_sm_record_marshal(sm_record.Error, old_sm_record.Error, "error", &comma, &parameters)
-
 	inner_sm_record_marshal(sm_record.Error_log, old_sm_record.Error_log, "error_log", &comma, &parameters)
+
+	inner_sm_record_marshal(sm_record.Job_id, old_sm_record.Job_id, "job_id", &comma, &parameters)
+
+	inner_sm_record_marshal(sm_record.Pid, old_sm_record.Pid, "pid", &comma, &parameters)
+
+	inner_sm_record_marshal(sm_record.Vm_id, old_sm_record.Vm_id, "vm_id", &comma, &parameters)
+
+	inner_sm_record_marshal(sm_record.Res_id, old_sm_record.Res_id, "res_id", &comma, &parameters)
 
 	parameters.WriteString("}")
 
@@ -185,12 +167,12 @@ func sm_record_marshal(sm_record, old_sm_record *Sm_record) string {
 func (emc *ExperimentManagerConnector) NotifyStateChange(sm_record, old_sm_record *Sm_record, infrastructure string) error { //do zmiany
 	log.Printf("NotifyStateChange")
 
-	//sm_json, err := json.Marshal(sm_record)
-	//if err != nil {
-	//	return err
-	//}
-	//log.Printf(string(sm_json))
-	//data := url.Values{"parameters": {string(sm_json)}, "infrastructure": {infrastructure}}
+	// sm_json, err := json.Marshal(sm_record)
+	// if err != nil {
+	// 	return err
+	// }
+	// log.Printf(string(sm_json))
+	// data := url.Values{"parameters": {string(sm_json)}, "infrastructure": {infrastructure}}
 
 	//----
 	data := url.Values{"parameters": {sm_record_marshal(sm_record, old_sm_record)}, "infrastructure": {infrastructure}}
@@ -222,32 +204,12 @@ func (emc *ExperimentManagerConnector) NotifyStateChange(sm_record, old_sm_recor
 	return nil
 }
 
-func (emc *ExperimentManagerConnector) SimulationManagerCommand(command string, sm_record *Sm_record, infrastructure string) error {
-	log.Printf("SimulationManagerCommand")
+func escape(input string) string {
+	output := strings.Replace(input, "\n", "\\n", -1)
+	output = strings.Replace(output, "\r", "\\r", -1)
+	output = strings.Replace(output, "\t", "\\t", -1)
+	output = strings.Replace(output, `'`, `\'`, -1)
+	output = strings.Replace(output, `"`, `\"`, -1)
 
-	data := url.Values{"command": {command}, "record_id": {sm_record.Id}, "infrastructure_name": {infrastructure}}
-	_url := emc.scheme + "://" + emc.experimentManagerAddress + "/infrastructure/simulation_manager_command"
-
-	request, err := http.NewRequest("POST", _url, strings.NewReader(data.Encode()))
-	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	if err != nil {
-		return err
-	}
-	request.SetBasicAuth(emc.login, emc.password)
-
-	resp, err := emc.client.Do(request)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	log.Printf(string(body))
-
-	log.Printf("SimulationManagerCommand: OK")
-
-	return nil
+	return output
 }

@@ -1,4 +1,4 @@
-package infrastructureFacade
+package infrastructurefacade
 
 import "scalarm_monitoring/model"
 
@@ -8,8 +8,8 @@ type IInfrastructureFacade interface {
 
 func NewInfrastructureFacades() map[string]IInfrastructureFacade {
 	return map[string]IInfrastructureFacade{
-		"private_machine": PrivateMachineFacade{},
-		"qsub":            QsubFacade{},
-		"qcg":             QcgFacade{},
+		//"private_machine": PrivateMachineFacade{},
+		"qsub": QsubFacade{},
+		"qcg":  QcgFacade{},
 	}
 }
