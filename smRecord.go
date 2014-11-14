@@ -1,11 +1,6 @@
-package model
+package main
 
 import "fmt"
-
-type EMJsonResponse struct {
-	Status     string
-	Sm_records []Sm_record
-}
 
 type Sm_record struct {
 	Id                  string `json:"_id"` //id scalarmowe				do identyfikacji rekordu przy PUTach

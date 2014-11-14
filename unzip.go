@@ -1,4 +1,4 @@
-package infrastructurefacade
+package main
 
 import (
 	"archive/zip"
