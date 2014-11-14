@@ -19,7 +19,7 @@ func (qf QsubFacade) prepareResource(command string) (string, error) {
 	}
 
 	matches := regexp.MustCompile(`([\d]+.batch.grid.cyf-kr.edu.pl)`).FindStringSubmatch(stringOutput)
-	if len(matches) > 0 {
+	if len(matches) == 0 {
 		return "", fmt.Errorf(stringOutput)
 	}
 

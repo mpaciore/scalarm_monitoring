@@ -165,12 +165,11 @@ func sm_record_marshal(sm_record, old_sm_record *Sm_record) string {
 
 	parameters.WriteString("}")
 
-	log.Printf(parameters.String())
+	log.Printf("Update: " + parameters.String())
 	return parameters.String()
 }
 
 func (emc *ExperimentManagerConnector) NotifyStateChange(sm_record, old_sm_record *Sm_record, infrastructure string) error { //do zmiany
-	log.Printf("NotifyStateChange")
 
 	// sm_json, err := json.Marshal(sm_record)
 	// if err != nil {
@@ -183,7 +182,7 @@ func (emc *ExperimentManagerConnector) NotifyStateChange(sm_record, old_sm_recor
 	data := url.Values{"parameters": {sm_record_marshal(sm_record, old_sm_record)}, "infrastructure": {infrastructure}}
 	//----
 
-	_url := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers/" + sm_record.Id //+ "?infrastructure=" + infrastructure
+	_url := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers/" + sm_record.Id
 
 	request, err := http.NewRequest("PUT", _url, strings.NewReader(data.Encode()))
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -200,10 +199,8 @@ func (emc *ExperimentManagerConnector) NotifyStateChange(sm_record, old_sm_recor
 
 	log.Printf("Status code: " + strconv.Itoa(resp.StatusCode))
 	if resp.StatusCode == 200 {
-		log.Printf("NotifyStateChange: OK")
 		return nil
 	} else {
-		log.Printf("NotifyStateChange: ERROR")
 		return errors.New("Update failed")
 	}
 	return nil
