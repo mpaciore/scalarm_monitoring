@@ -3,9 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"scalarm_monitoring/infrastructureFacade"
-	"scalarm_monitoring/model"
-	"scalarm_monitoring/utils"
 	"time"
 )
 
@@ -20,18 +17,21 @@ func main() {
 	}
 
 	//register working
-	utils.RegisterWorking()
-	defer utils.UnregisterWorking()
+	RegisterWorking()
+	defer UnregisterWorking()
 
 	//listen for signals
 	infrastructuresChannel := make(chan []string, 10)
 	errorChannel := make(chan error, 1)
-	go model.SignalCatcher(infrastructuresChannel, errorChannel, configFile)
+	go SignalCatcher(infrastructuresChannel, errorChannel, configFile)
 
 	//read configuration
-	configData, err := model.ReadConfiguration(configFile)
-	utils.Check(err)
+	configData, err := ReadConfiguration(configFile)
+	if err != nil {
+		log.Fatal("Could not read configuration file")
+	}
 
+	log.Printf("Config loaded")
 	log.Printf("\tInformation Service address: %v", configData.InformationServiceAddress)
 	log.Printf("\tlogin:                       %v", configData.Login)
 	log.Printf("\tpassword:                    %v", configData.Password)
@@ -40,11 +40,11 @@ func main() {
 	log.Printf("\tScalarm scheme:              %v", configData.ScalarmScheme)
 
 	//create EM connector
-	experimentManagerConnector := model.NewExperimentManagerConnector(configData.Login, configData.Password,
+	experimentManagerConnector := NewExperimentManagerConnector(configData.Login, configData.Password,
 		configData.ScalarmCertificatePath, configData.ScalarmScheme)
 
 	//get experiment manager location
-	if _, err := utils.RepetitiveCaller(
+	if _, err := RepetitiveCaller(
 		func() (interface{}, error) {
 			return nil, experimentManagerConnector.GetExperimentManagerLocation(configData.InformationServiceAddress)
 		},
@@ -55,17 +55,19 @@ func main() {
 	}
 
 	//create infrastructure facades
-	infrastructureFacades := infrastructureFacade.NewInfrastructureFacades()
+	infrastructureFacades := NewInfrastructureFacades()
 
-	var old_sm_record model.Sm_record
+	var old_sm_record Sm_record
+	var sm_records []Sm_record
 	var nonerrorSmCount int
+
 	log.Printf("Configuration finished\n\n\n\n\n")
 
 	for {
 		log.Printf("Starting main loop\n\n\n")
 
 		//check for config changes
-		configData.Infrastructures = model.AppendIfMissing(configData.Infrastructures, model.SignalHandler(infrastructuresChannel, errorChannel))
+		configData.Infrastructures = AppendIfMissing(configData.Infrastructures, SignalHandler(infrastructuresChannel, errorChannel))
 		log.Printf("Current infrastructures: %v\n\n\n", configData.Infrastructures)
 
 		nonerrorSmCount = 0
@@ -74,10 +76,8 @@ func main() {
 		for _, infrastructure := range configData.Infrastructures {
 			log.Printf("Starting " + infrastructure + " infrastructure loop")
 
-			var sm_records *[]model.Sm_record
-
 			//get sm_records
-			if raw_sm_records, err := utils.RepetitiveCaller(
+			if raw_sm_records, err := RepetitiveCaller(
 				func() (interface{}, error) {
 					return experimentManagerConnector.GetSimulationManagerRecords(infrastructure)
 				},
@@ -86,19 +86,19 @@ func main() {
 			); err != nil {
 				log.Fatal("Fatal: Unable to get simulation manager records for " + infrastructure)
 			} else {
-				sm_records = raw_sm_records.(*[]model.Sm_record)
+				sm_records = raw_sm_records.([]Sm_record)
 			}
 
-			nonerrorSmCount += len(*sm_records)
-			if len(*sm_records) == 0 {
+			nonerrorSmCount += len(sm_records)
+			if len(sm_records) == 0 {
 				log.Printf("No sm_records")
 			}
 
 			//sm_records loop
-			for _, sm_record := range *sm_records {
+			for _, sm_record := range sm_records {
 				old_sm_record = sm_record
 
-				log.Printf("Starting sm_record handle function")
+				log.Printf("Starting sm_record handle function, ID: " + sm_record.Id)
 				infrastructureFacades[infrastructure].HandleSM(&sm_record, experimentManagerConnector, infrastructure)
 				log.Printf("Ending sm_record handle function")
 
@@ -108,7 +108,7 @@ func main() {
 
 				//notify state change
 				if old_sm_record != sm_record {
-					if _, err := utils.RepetitiveCaller(
+					if _, err := RepetitiveCaller(
 						func() (interface{}, error) {
 							return nil, experimentManagerConnector.NotifyStateChange(&sm_record, &old_sm_record, infrastructure)
 						},

@@ -1,9 +1,5 @@
 Scalarm Monitoring
 ============ 
-Contents 
----------- 
-* scalarm_monitoring - main monitoring program
-* config - configuration for monitoring
 
 Installation guide: 
 ---------------------- 
