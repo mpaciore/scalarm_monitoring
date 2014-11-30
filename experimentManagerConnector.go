@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -22,23 +23,22 @@ type ExperimentManagerConnector struct {
 }
 
 func NewExperimentManagerConnector(login, password, certificatePath, scheme string) *ExperimentManagerConnector {
-	// var client *http.Client
-	// if certificatePath != "" {
-	// 	CA_Pool := x509.NewCertPool()
-	// 	severCert, err := ioutil.ReadFile(certificatePath)
-	// 	if err != nil {
-	// 		log.Fatal("An error occured: could not load Scalarm certificate")
-	// 	}
-	// 	CA_Pool.AppendCertsFromPEM(severCert)
+	var client *http.Client
+	if certificatePath != "" {
+		CA_Pool := x509.NewCertPool()
+		severCert, err := ioutil.ReadFile(certificatePath)
+		if err != nil {
+			log.Fatal("An error occured: could not load Scalarm certificate")
+		}
+		CA_Pool.AppendCertsFromPEM(severCert)
 
-	// 	client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: CA_Pool}}}
-	// } else {
-	// 	client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
-	// 	//client = &http.Client{} //safer option
-	// }
+		client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: CA_Pool}}}
+	} else {
+		client = &http.Client{}
+	}
 
 	// #justscalarmthings
-	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+	//client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 
 	return &ExperimentManagerConnector{login: login, password: password, client: client, scheme: scheme}
 }
