@@ -22,8 +22,11 @@ type ExperimentManagerConnector struct {
 	scheme                   string
 }
 
-func NewExperimentManagerConnector(login, password, certificatePath, scheme string) *ExperimentManagerConnector {
+func NewExperimentManagerConnector(login, password, certificatePath, scheme string, insecure bool) *ExperimentManagerConnector {
 	var client *http.Client
+	tlsConfig := tls.Config{}
+
+
 	if certificatePath != "" {
 		CA_Pool := x509.NewCertPool()
 		severCert, err := ioutil.ReadFile(certificatePath)
@@ -32,13 +35,15 @@ func NewExperimentManagerConnector(login, password, certificatePath, scheme stri
 		}
 		CA_Pool.AppendCertsFromPEM(severCert)
 
-		client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: CA_Pool}}}
-	} else {
-		client = &http.Client{}
+		tlsConfig.RootCAs = CA_Pool
 	}
+		
 
-	// #justscalarmthings
-	//client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+	client = &http.Client{Transport: &http.Transport{
+		TLSClientConfig: &tlsConfig, InsecureSkipVerify: insecure
+	}}
+
+	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{}}}
 
 	return &ExperimentManagerConnector{login: login, password: password, client: client, scheme: scheme}
 }
