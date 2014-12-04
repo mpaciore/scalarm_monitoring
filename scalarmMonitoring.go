@@ -37,7 +37,7 @@ func main() {
 	log.Printf("\tpassword:                    %v", configData.Password)
 	log.Printf("\tinfrastructures:             %v", configData.Infrastructures)
 	log.Printf("\tScalarm certificate path:    %v", configData.ScalarmCertificatePath)
-	log.Printf("\tInsecure SSL:       %v", configData.InsecureSSL)
+	log.Printf("\tinsecure SSL:                %v", configData.InsecureSSL)
 	log.Printf("\tScalarm scheme:              %v", configData.ScalarmScheme)
 
 	//create EM connector
