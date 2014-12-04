@@ -24,10 +24,10 @@ type ExperimentManagerConnector struct {
 
 func NewExperimentManagerConnector(login, password, certificatePath, scheme string, insecure bool) *ExperimentManagerConnector {
 	var client *http.Client
-	tlsConfig := tls.Config{}
+	tlsConfig := tls.Config{InsecureSkipVerify: insecure}
 
 
-	if certificatePath != "" {
+	if (certificatePath != "") {
 		CA_Pool := x509.NewCertPool()
 		severCert, err := ioutil.ReadFile(certificatePath)
 		if err != nil {
@@ -39,11 +39,7 @@ func NewExperimentManagerConnector(login, password, certificatePath, scheme stri
 	}
 		
 
-	client = &http.Client{Transport: &http.Transport{
-		TLSClientConfig: &tlsConfig, InsecureSkipVerify: insecure
-	}}
-
-	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{}}}
+	client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tlsConfig}}
 
 	return &ExperimentManagerConnector{login: login, password: password, client: client, scheme: scheme}
 }
