@@ -39,6 +39,7 @@ The config folder contains single file config.json that contains required inform
 * Infrastructures - list of infrastructures monitor has to check for records
 * ScalarmCertificatePath - path to custom certificate (optional, by default looking in standard certificate directory)
 * ScalarmScheme - http or https (default)
+* InsecureSSL - should invalid certificates (eg. self-signed) be accepted
 
 Example config:
 
@@ -53,7 +54,8 @@ Example config:
 		"qcg"
 	],
 	"ScalarmCertificatePath" : "cert.pem",
-	"ScalarmScheme" : "https"
+	"ScalarmScheme" : "https",
+	"InsecureSSL" : true
 }
 ```
 Example config can be found in config/config.json.
