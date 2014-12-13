@@ -13,7 +13,9 @@ type QsubFacade struct{}
 //executes command, extracts resource ID
 //returns new job ID
 func (qf QsubFacade) prepareResource(command string) (string, error) {
+	log.Printf("Executing: " + command)
 	stringOutput, err := execute(command)
+	log.Printf("Response:\n" + stringOutput)
 	if err != nil {
 		return "", fmt.Errorf(stringOutput)
 	}
@@ -34,7 +36,10 @@ func (qf QsubFacade) resourceStatus(jobID string) (string, error) {
 		return "available", nil
 	}
 
-	stringOutput, _ := execute("qstat " + jobID)
+	command := "qstat " + jobID
+	log.Printf("Executing: " + command)
+	stringOutput, _ := execute(command)
+	log.Printf("Response:\n" + stringOutput)
 
 	for _, line := range strings.Split(stringOutput, "\n") {
 
@@ -130,9 +135,14 @@ func (qf QsubFacade) HandleSM(sm_record *Sm_record, emc *ExperimentManagerConnec
 		}
 
 		//extract first zip
-		extract("sources_"+sm_record.Id+".zip", ".")
+		err := extract("sources_"+sm_record.Id+".zip", ".")
+		if err != nil {
+			sm_record.Error_log = err.Error()
+			sm_record.Resource_status = "error"
+			return
+		}
 		//move second zip one directory up
-		_, err := execute("mv scalarm_simulation_manager_code_" + sm_record.Sm_uuid + "/* .")
+		_, err = execute("mv scalarm_simulation_manager_code_" + sm_record.Sm_uuid + "/* .")
 		if err != nil {
 			sm_record.Error_log = err.Error()
 			sm_record.Resource_status = "error"
@@ -159,18 +169,22 @@ func (qf QsubFacade) HandleSM(sm_record *Sm_record, emc *ExperimentManagerConnec
 
 	} else if sm_record.Cmd_to_execute_code == "stop" {
 
-		output, err := execute(sm_record.Cmd_to_execute)
+		log.Printf("Executing: " + sm_record.Cmd_to_execute)
+		stringOutput, err := execute(sm_record.Cmd_to_execute)
+		log.Printf("Response:\n" + stringOutput)
 		if err != nil {
-			sm_record.Error_log = output
+			sm_record.Error_log = stringOutput
 			sm_record.Resource_status = "error"
 			return
 		}
 
 	} else if sm_record.Cmd_to_execute_code == "get_log" {
 
-		output, _ := execute(sm_record.Cmd_to_execute)
+		log.Printf("Executing: " + sm_record.Cmd_to_execute)
+		stringOutput, _ := execute(sm_record.Cmd_to_execute)
+		log.Printf("Response:\n" + stringOutput)
 		//sm_record.Error_log = "Error while getting logs: " + err.Error()
-		sm_record.Error_log = output
+		sm_record.Error_log = stringOutput
 
 	}
 

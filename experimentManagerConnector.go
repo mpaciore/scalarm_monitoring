@@ -37,7 +37,6 @@ func NewExperimentManagerConnector(login, password, certificatePath, scheme stri
 	// 	//client = &http.Client{} //safer option
 	// }
 
-	// #justscalarmthings
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 
 	return &ExperimentManagerConnector{login: login, password: password, client: client, scheme: scheme}
@@ -197,10 +196,10 @@ func (emc *ExperimentManagerConnector) NotifyStateChange(sm_record, old_sm_recor
 	}
 	defer resp.Body.Close()
 
-	log.Printf("Status code: " + strconv.Itoa(resp.StatusCode))
 	if resp.StatusCode == 200 {
 		return nil
 	} else {
+		log.Printf("Status code: " + strconv.Itoa(resp.StatusCode))
 		return errors.New("Update failed")
 	}
 	return nil
