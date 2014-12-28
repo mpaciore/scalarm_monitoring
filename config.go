@@ -16,6 +16,7 @@ type ConfigData struct {
 	Infrastructures           []string
 	ScalarmCertificatePath    string
 	ScalarmScheme             string
+	InsecureSSL               bool
 }
 
 func ReadConfiguration(configFile string) (*ConfigData, error) {
