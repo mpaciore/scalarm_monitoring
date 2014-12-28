@@ -181,14 +181,17 @@ func (qf QcgFacade) HandleSM(sm_record *Sm_record, emc *ExperimentManagerConnect
 
 	} else if sm_record.Cmd_to_execute_code == "stop" {
 
+		// log.Printf("Executing: " + sm_record.Cmd_to_execute)
+		// stringOutput, err := execute(sm_record.Cmd_to_execute)
+		// log.Printf("Response:\n" + stringOutput)
+		// if err != nil {
+		// 	sm_record.Error_log = stringOutput
+		// 	sm_record.Resource_status = "error"
+		// 	return
+		// }
 		log.Printf("Executing: " + sm_record.Cmd_to_execute)
-		stringOutput, err := execute(sm_record.Cmd_to_execute)
+		stringOutput, _ := execute(sm_record.Cmd_to_execute)
 		log.Printf("Response:\n" + stringOutput)
-		if err != nil {
-			sm_record.Error_log = stringOutput
-			sm_record.Resource_status = "error"
-			return
-		}
 
 	} else if sm_record.Cmd_to_execute_code == "get_log" {
 

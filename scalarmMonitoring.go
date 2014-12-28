@@ -74,7 +74,6 @@ func main() {
 		//infrastructures loop
 		for _, infrastructure := range configData.Infrastructures {
 			log.Printf("Starting " + infrastructure + " infrastructure loop")
-			start := time.Now()
 
 			//get sm_records
 			if raw_sm_records, err := RepetitiveCaller(
@@ -119,7 +118,6 @@ func main() {
 					}
 				}
 			}
-			log.Printf(infrastructure+" loop took %s", time.Since(start))
 			log.Printf("Ending " + infrastructure + " infrastructure loop\n\n\n")
 		}
 
