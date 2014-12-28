@@ -34,7 +34,6 @@ func main() {
 	log.Printf("Config loaded")
 	log.Printf("\tInformation Service address: %v", configData.InformationServiceAddress)
 	log.Printf("\tlogin:                       %v", configData.Login)
-	log.Printf("\tpassword:                    %v", configData.Password)
 	log.Printf("\tinfrastructures:             %v", configData.Infrastructures)
 	log.Printf("\tScalarm certificate path:    %v", configData.ScalarmCertificatePath)
 	log.Printf("\tinsecure SSL:                %v", configData.InsecureSSL)
@@ -65,7 +64,7 @@ func main() {
 	log.Printf("Configuration finished\n\n\n\n\n")
 
 	for {
-		log.Printf("Starting main loop\n\n\n")
+		log.Printf("Starting main loop")
 
 		//check for config changes
 		configData.Infrastructures = AppendIfMissing(configData.Infrastructures, SignalHandler(infrastructuresChannel, errorChannel))
@@ -124,7 +123,7 @@ func main() {
 		}
 
 		log.Printf("Ending main loop\n\n\n\n\n")
-		if nonerrorSmCount == 0 { //TODO nothing running on infrastructure
+		if nonerrorSmCount == 0 {
 			break
 		}
 
