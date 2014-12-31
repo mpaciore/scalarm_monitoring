@@ -28,93 +28,104 @@ func (qf QcgFacade) prepareResource(command string) (string, error) {
 	return matches[1], nil
 }
 
-//receives job ID
-//checks resource state based on job state
-//returns resource state
-func (qf QcgFacade) resourceStatus(jobID string) (string, error) {
-	if jobID == "" {
-		return "available", nil
-	}
-
-	command := "QCG_ENV_PROXY_DURATION_MIN=12 qcg-info " + jobID
+//gets resource states
+//returns array of resource states
+func (qf QcgFacade) StatusCheck() ([]string, error) {
+	command := `QCG_ENV_PROXY_DURATION_MIN=12 qcg-list -F "%-25I  %-20S"`
 	log.Printf("Executing: " + command)
 	stringOutput, _ := execute(command)
 	log.Printf("Response:\n" + stringOutput)
 
 	if strings.Contains(stringOutput, "Enter GRID pass phrase for this identity:") {
-		log.Printf("Password required, cannot monitor this record\n")
-		return "", fmt.Errorf("Proxy invalid")
+		log.Printf("Password required, cannot monitor QCG\n")
+		return nil, fmt.Errorf("Proxy invalid")
 	}
 
-	matches := regexp.MustCompile(`Status: ([\S]+)`).FindStringSubmatch(stringOutput)
-	if len(matches) == 0 {
-		return "", fmt.Errorf(stringOutput)
+	return strings.Split(stringOutput, "\n"), nil
+}
+
+//receives job ID
+//checks resource state based on job state
+//returns resource state
+func (qf QcgFacade) resourceStatus(statusArray []string, jobID string) (string, error) {
+	if jobID == "" {
+		return "available", nil
 	}
 
-	var res string
-	switch matches[1] {
-	case "UNSUBMITTED":
-		{
-			res = "initializing"
-		}
-	case "UNCOMMITED":
-		{
-			res = "initializing"
-		}
-	case "QUEUED":
-		{
-			res = "initializing"
-		}
-	case "PREPROCESSING":
-		{
-			res = "initializing"
-		}
-	case "PENDING":
-		{
-			res = "initializing"
-		}
-	case "RUNNING":
-		{
-			res = "running_sm"
-		}
-	case "STOPPED":
-		{
-			res = "released"
-		}
-	case "POSTPROCESSING":
-		{
-			res = "released"
-		}
-	case "FINISHED":
-		{
-			res = "released"
-		}
-	case "FAILED":
-		{
-			res = "released"
-		}
-	case "CANCELED":
-		{
-			res = "released"
-		}
-	case "UNKNOWN":
-		{
-			res = "error"
-		}
-	default:
-		{
-			return "", fmt.Errorf(stringOutput)
+	for _, status := range statusArray {
+		if strings.Contains(status, jobID) {
+			matches := regexp.MustCompile(`(?:\S+\s+)(\S+).+`).FindStringSubmatch(status)
+			if len(matches) == 0 {
+				return "", fmt.Errorf(status)
+			}
+
+			var res string
+			switch matches[1] {
+			case "UNSUBMITTED":
+				{
+					res = "initializing"
+				}
+			case "UNCOMMITED":
+				{
+					res = "initializing"
+				}
+			case "QUEUED":
+				{
+					res = "initializing"
+				}
+			case "PREPROCESSING":
+				{
+					res = "initializing"
+				}
+			case "PENDING":
+				{
+					res = "initializing"
+				}
+			case "RUNNING":
+				{
+					res = "running_sm"
+				}
+			case "STOPPED":
+				{
+					res = "released"
+				}
+			case "POSTPROCESSING":
+				{
+					res = "released"
+				}
+			case "FINISHED":
+				{
+					res = "released"
+				}
+			case "FAILED":
+				{
+					res = "released"
+				}
+			case "CANCELED":
+				{
+					res = "released"
+				}
+			case "UNKNOWN":
+				{
+					res = "error"
+				}
+			default:
+				{
+					return "", fmt.Errorf(status)
+				}
+			}
+			return res, nil
 		}
 	}
-
-	return res, nil
+	// no such jobID
+	return "released", nil
 }
 
 //receives sm_record, ExperimentManager connector and infrastructure name
 //decides about action on sm and its resources
 //returns nothing
-func (qf QcgFacade) HandleSM(sm_record *Sm_record, emc *ExperimentManagerConnector, infrastructure string) {
-	resource_status, err := qf.resourceStatus(sm_record.Job_id)
+func (qf QcgFacade) HandleSM(sm_record *Sm_record, emc *ExperimentManagerConnector, infrastructure string, statusArray []string) {
+	resource_status, err := qf.resourceStatus(statusArray, sm_record.Job_id)
 	if err != nil {
 		sm_record.Error_log = err.Error()
 		sm_record.Resource_status = "error"

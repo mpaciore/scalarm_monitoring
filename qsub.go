@@ -28,25 +28,30 @@ func (qf QsubFacade) prepareResource(command string) (string, error) {
 	return matches[1], nil
 }
 
-//receives job ID
-//checks resource state based on job state
-//returns resource state
-func (qf QsubFacade) resourceStatus(jobID string) (string, error) {
-	if jobID == "" {
-		return "available", nil
-	}
-
-	command := "qstat " + jobID
+//gets resource states
+//returns array of resource states
+func (qf QsubFacade) StatusCheck() ([]string, error) {
+	command := `qstat -u $USER`
 	log.Printf("Executing: " + command)
 	stringOutput, _ := execute(command)
 	log.Printf("Response:\n" + stringOutput)
 
-	for _, line := range strings.Split(stringOutput, "\n") {
+	return strings.Split(stringOutput, "\n"), nil
+}
 
-		if strings.HasPrefix(line, strings.Split(jobID, ".")[0]) {
-			matches := regexp.MustCompile(`(?:\S+\s+){4}([A-Z]).+`).FindStringSubmatch(line)
+//receives job ID
+//checks resource state based on job state
+//returns resource state
+func (qf QsubFacade) resourceStatus(statusArray []string, jobID string) (string, error) {
+	if jobID == "" {
+		return "available", nil
+	}
+
+	for _, status := range statusArray {
+		if strings.Contains(status, strings.Split(jobID, ".")[0]) {
+			matches := regexp.MustCompile(`(?:\S+\s+){9}([A-Z]).+`).FindStringSubmatch(status)
 			if len(matches) == 0 {
-				return "", fmt.Errorf(stringOutput)
+				return "", fmt.Errorf(status)
 			}
 
 			var res string
@@ -87,22 +92,23 @@ func (qf QsubFacade) resourceStatus(jobID string) (string, error) {
 				{
 					res = "error"
 				}
+			default:
+				{
+					return "", fmt.Errorf(status)
+				}
 			}
 			return res, nil
-
-		} else if strings.HasPrefix(line, "qstat: Unknown Job Id") {
-			return "released", nil
 		}
 	}
-	//exitted loop, no status found
-	return "", fmt.Errorf(stringOutput)
+	// no such jobID
+	return "released", nil
 }
 
 //receives sm_record, ExperimentManager connector and infrastructure name
 //decides about action on sm and its resources
 //returns nothing
-func (qf QsubFacade) HandleSM(sm_record *Sm_record, emc *ExperimentManagerConnector, infrastructure string) {
-	resource_status, err := qf.resourceStatus(sm_record.Job_id)
+func (qf QsubFacade) HandleSM(sm_record *Sm_record, emc *ExperimentManagerConnector, infrastructure string, statusArray []string) {
+	resource_status, err := qf.resourceStatus(statusArray, sm_record.Job_id)
 	if err != nil {
 		sm_record.Error_log = err.Error()
 		sm_record.Resource_status = "error"
