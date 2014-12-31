@@ -60,6 +60,7 @@ func main() {
 	var old_sm_record Sm_record
 	var sm_records []Sm_record
 	var nonerrorSmCount int
+	var statusArray []string
 
 	log.Printf("Configuration finished\n\n\n\n\n")
 
@@ -89,6 +90,12 @@ func main() {
 				sm_records = raw_sm_records.([]Sm_record)
 			}
 
+			statusArray, err = infrastructureFacades[infrastructure].StatusCheck()
+			if err != nil {
+				log.Printf("Cannot get status for %s infrastructure", infrastructure)
+				continue
+			}
+
 			nonerrorSmCount += len(sm_records)
 			if len(sm_records) == 0 {
 				log.Printf("No sm_records")
@@ -99,7 +106,7 @@ func main() {
 				old_sm_record = sm_record
 
 				log.Printf("Starting sm_record handle function, ID: " + sm_record.Id)
-				infrastructureFacades[infrastructure].HandleSM(&sm_record, experimentManagerConnector, infrastructure)
+				infrastructureFacades[infrastructure].HandleSM(&sm_record, experimentManagerConnector, infrastructure, statusArray)
 				log.Printf("Ending sm_record handle function")
 
 				if sm_record.State == "error" {

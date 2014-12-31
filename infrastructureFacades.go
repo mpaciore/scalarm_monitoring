@@ -1,7 +1,8 @@
 package main
 
 type IInfrastructureFacade interface {
-	HandleSM(*Sm_record, *ExperimentManagerConnector, string)
+	StatusCheck() ([]string, error)
+	HandleSM(*Sm_record, *ExperimentManagerConnector, string, []string)
 }
 
 func NewInfrastructureFacades() map[string]IInfrastructureFacade {
