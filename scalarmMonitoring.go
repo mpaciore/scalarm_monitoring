@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"runtime/debug"
 	"time"
 )
 
@@ -19,6 +20,16 @@ func main() {
 	//register working
 	RegisterWorking()
 	defer UnregisterWorking()
+
+	//declare variables - memory optimization
+	var sm_record Sm_record
+	var old_sm_record Sm_record
+	var sm_records []Sm_record
+	var nonerrorSmCount int
+	var statusArray []string
+	var err error
+	var infrastructure string
+	var raw_sm_records interface{}
 
 	//listen for signals
 	infrastructuresChannel := make(chan []string, 10)
@@ -57,11 +68,6 @@ func main() {
 	//create infrastructure facades
 	infrastructureFacades := NewInfrastructureFacades()
 
-	var old_sm_record Sm_record
-	var sm_records []Sm_record
-	var nonerrorSmCount int
-	var statusArray []string
-
 	log.Printf("Configuration finished\n\n\n\n\n")
 
 	for {
@@ -74,11 +80,11 @@ func main() {
 		nonerrorSmCount = 0
 
 		//infrastructures loop
-		for _, infrastructure := range configData.Infrastructures {
+		for _, infrastructure = range configData.Infrastructures {
 			log.Printf("Starting " + infrastructure + " infrastructure loop")
 
 			//get sm_records
-			if raw_sm_records, err := RepetitiveCaller(
+			if raw_sm_records, err = RepetitiveCaller(
 				func() (interface{}, error) {
 					return experimentManagerConnector.GetSimulationManagerRecords(infrastructure)
 				},
@@ -102,7 +108,7 @@ func main() {
 			}
 
 			//sm_records loop
-			for _, sm_record := range sm_records {
+			for _, sm_record = range sm_records {
 				old_sm_record = sm_record
 
 				log.Printf("Starting sm_record handle function, ID: " + sm_record.Id)
@@ -115,7 +121,7 @@ func main() {
 
 				//notify state change
 				if old_sm_record != sm_record {
-					if _, err := RepetitiveCaller(
+					if _, err = RepetitiveCaller(
 						func() (interface{}, error) {
 							return nil, experimentManagerConnector.NotifyStateChange(&sm_record, &old_sm_record, infrastructure)
 						},
@@ -134,6 +140,7 @@ func main() {
 			break
 		}
 
+		debug.FreeOSMemory()
 		time.Sleep(10 * time.Second)
 	}
 	log.Printf("End")

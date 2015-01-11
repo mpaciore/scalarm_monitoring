@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"runtime/debug"
 	"strconv"
 	"strings"
 )
@@ -26,8 +27,7 @@ func NewExperimentManagerConnector(login, password, certificatePath, scheme stri
 	var client *http.Client
 	tlsConfig := tls.Config{InsecureSkipVerify: insecure}
 
-
-	if (certificatePath != "") {
+	if certificatePath != "" {
 		CA_Pool := x509.NewCertPool()
 		severCert, err := ioutil.ReadFile(certificatePath)
 		if err != nil {
@@ -37,7 +37,6 @@ func NewExperimentManagerConnector(login, password, certificatePath, scheme stri
 
 		tlsConfig.RootCAs = CA_Pool
 	}
-		
 
 	client = &http.Client{Transport: &http.Transport{TLSClientConfig: &tlsConfig}}
 
@@ -63,7 +62,7 @@ func (emc *ExperimentManagerConnector) GetExperimentManagerLocation(informationS
 		return err
 	}
 
-	emc.experimentManagerAddress = experimentManagerAddresses[0] //TODO random
+	emc.experimentManagerAddress = experimentManagerAddresses[0] // TODO random
 	log.Printf("\texp_man_address: " + emc.experimentManagerAddress)
 	return nil
 }
@@ -105,6 +104,7 @@ func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructur
 }
 
 func (emc *ExperimentManagerConnector) GetSimulationManagerCode(smRecordId string, infrastructure string) error {
+	debug.FreeOSMemory()
 	url := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers/" + smRecordId + "/code" + "?infrastructure=" + infrastructure
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
