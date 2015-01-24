@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -73,7 +74,8 @@ type EMJsonResponse struct {
 }
 
 func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructure string) ([]Sm_record, error) {
-	url := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers?infrastructure=" + infrastructure
+	url := fmt.Sprintf(`%s://%s/simulation_managers?infrastructure=%s&options={"states_not":"error","onsite_monitoring":true}`,
+		emc.scheme, emc.experimentManagerAddress, infrastructure)
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -90,7 +92,7 @@ func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructur
 	if err != nil {
 		return nil, err
 	}
-
+	log.Printf("URL: %s\nBODY: %s\n", url, body)
 	var response EMJsonResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
