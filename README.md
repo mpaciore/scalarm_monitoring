@@ -40,6 +40,8 @@ The config folder contains single file config.json that contains required inform
 * ScalarmCertificatePath - path to custom certificate (optional, by default looking in standard certificate directory)
 * ScalarmScheme - http or https (default)
 * InsecureSSL - should invalid certificates (eg. self-signed) be accepted
+* ProbeFrequencySecs (optional, default: 10) - number of delay in seconds between getting records and checking their state if last check was completed
+* ExitTimeout (optional, default: 0) - number of seconds to wait before exiting if there are no more records available; if this value is greater than 0, the minimal time to exit is ProbeFrequencySecs; if this values is less than 0, process continues work indefinitely (use with caution!)
 
 Example config:
 
@@ -55,7 +57,9 @@ Example config:
 	],
 	"ScalarmCertificatePath" : "cert.pem",
 	"ScalarmScheme" : "https",
-	"InsecureSSL" : true
+	"InsecureSSL" : true,
+	"ProbeFrequencySecs": 10,
+	"ExitTimeout": 0
 }
 ```
 Example config can be found in config/config.json.

@@ -8,5 +8,7 @@
 		"qcg"
 	],
 	"ScalarmCertificatePath" : "cert.pem",
-	"ScalarmScheme" : "https"
+	"ScalarmScheme" : "https",
+    "ExitTimeoutSecs" : 0,
+    "ProbeFrequencySecs": 10
 }

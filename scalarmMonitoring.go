@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const DEFAULT_PROBE_FREQ_SECS int = 10
+
 func main() {
 
 	//set config file name
@@ -30,6 +32,8 @@ func main() {
 	var err error
 	var infrastructure string
 	var raw_sm_records interface{}
+	var noMoreRecords bool = false
+	var noMoreRecordsTime time.Time
 
 	//listen for signals
 	infrastructuresChannel := make(chan []string, 10)
@@ -49,6 +53,16 @@ func main() {
 	log.Printf("\tScalarm certificate path:    %v", configData.ScalarmCertificatePath)
 	log.Printf("\tinsecure SSL:                %v", configData.InsecureSSL)
 	log.Printf("\tScalarm scheme:              %v", configData.ScalarmScheme)
+	log.Printf("\tExit timeout (secs):         %v", configData.ExitTimeoutSecs)
+	log.Printf("\tProbe frequency (secs):      %v", configData.ProbeFrequencySecs)
+
+	//setup time values
+	var waitIndefinitely bool = (configData.ExitTimeoutSecs < 0)
+	var exitTimeout time.Duration = time.Duration(configData.ExitTimeoutSecs)*time.Second
+	var probeFrequencySecs = time.Duration(DEFAULT_PROBE_FREQ_SECS)*time.Second
+	if configData.ProbeFrequencySecs > 0 {
+		probeFrequencySecs = time.Duration(configData.ProbeFrequencySecs) * time.Second
+	}
 
 	//create EM connector
 	experimentManagerConnector := NewExperimentManagerConnector(configData.Login, configData.Password,
@@ -136,12 +150,21 @@ func main() {
 		}
 
 		log.Printf("Ending main loop\n\n\n\n\n")
-		if nonerrorSmCount == 0 {
-			break
+		if !waitIndefinitely && nonerrorSmCount == 0 {
+			if !noMoreRecords {
+				noMoreRecords = true
+				noMoreRecordsTime = time.Now()
+			}
+
+			if time.Now().After(noMoreRecordsTime.Add(exitTimeout)) {
+				break
+			}
+		} else {
+			noMoreRecords = false
 		}
 
 		debug.FreeOSMemory()
-		time.Sleep(10 * time.Second)
+		time.Sleep(probeFrequencySecs)
 	}
 	log.Printf("End")
 }
