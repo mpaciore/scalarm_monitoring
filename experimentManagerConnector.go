@@ -95,7 +95,7 @@ func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructur
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("URL: %s\nBODY: %s\n", urlString, body)
+
 	var response EMJsonResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
