@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -74,9 +73,13 @@ type EMJsonResponse struct {
 }
 
 func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructure string) ([]Sm_record, error) {
-	url := fmt.Sprintf(`%s://%s/simulation_managers?infrastructure=%s&options={"states_not":"error","onsite_monitoring":true}`,
-		emc.scheme, emc.experimentManagerAddress, infrastructure)
-	request, err := http.NewRequest("GET", url, nil)
+	urlString := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers?"
+	params := url.Values{}
+	params.Add("infrastructure", infrastructure)
+	params.Add("options", "{\"states_not\":\"error\",\"onsite_monitoring\":true}")
+	urlString = urlString + params.Encode()
+
+	request, err := http.NewRequest("GET", urlString, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +95,7 @@ func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructur
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("URL: %s\nBODY: %s\n", url, body)
+	log.Printf("URL: %s\nBODY: %s\n", urlString, body)
 	var response EMJsonResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
@@ -107,8 +110,12 @@ func (emc *ExperimentManagerConnector) GetSimulationManagerRecords(infrastructur
 
 func (emc *ExperimentManagerConnector) GetSimulationManagerCode(smRecordId string, infrastructure string) error {
 	debug.FreeOSMemory()
-	url := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers/" + smRecordId + "/code" + "?infrastructure=" + infrastructure
-	request, err := http.NewRequest("GET", url, nil)
+	urlString := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers/" + smRecordId + "/code?"
+	params := url.Values{}
+	params.Add("infrastructure", infrastructure)
+	urlString = urlString + params.Encode()
+
+	request, err := http.NewRequest("GET", urlString, nil)
 	if err != nil {
 		return err
 	}
@@ -185,9 +192,9 @@ func (emc *ExperimentManagerConnector) NotifyStateChange(sm_record, old_sm_recor
 	data := url.Values{"parameters": {sm_record_marshal(sm_record, old_sm_record)}, "infrastructure": {infrastructure}}
 	//----
 
-	_url := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers/" + sm_record.Id
+	urlString := emc.scheme + "://" + emc.experimentManagerAddress + "/simulation_managers/" + sm_record.Id
 
-	request, err := http.NewRequest("PUT", _url, strings.NewReader(data.Encode()))
+	request, err := http.NewRequest("PUT", urlString, strings.NewReader(data.Encode()))
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	if err != nil {
 		return err
